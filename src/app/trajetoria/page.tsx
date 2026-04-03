@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Timeline } from "@/components/trajectory/Timeline";
 import { Achievements } from "@/components/trajectory/Achievements";
+import { ShareButton } from "@/components/shared/ShareButton";
 
 export const metadata: Metadata = {
   title: "Trajetória Política",
@@ -20,10 +21,11 @@ export default function TrajetoriaPage() {
           <h1 className="text-4xl sm:text-5xl font-extrabold text-foreground mb-4">
             Trajetória <span className="text-primary">Política</span>
           </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
             Uma carreira dedicada ao Maranhão, com resultados comprovados que falam por si.
             De vereador ao prefeito mais votado da história de São Luís.
           </p>
+          <ShareButton text="Conheça a trajetória política de Eduardo Braide!" />
         </div>
 
         {/* Timeline */}
