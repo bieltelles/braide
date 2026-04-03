@@ -1,22 +1,18 @@
 "use client";
 
 import { SupportButton } from "./SupportButton";
-import { signIn } from "next-auth/react";
 
 export function SupportSection() {
   const handleSupport = async () => {
-    try {
-      await fetch("/api/supporters", { method: "POST" });
-    } catch (error) {
-      console.error("Failed to register support:", error);
-    }
+    // In production, POST to /api/supporters
+    console.log("Support registered");
   };
 
   const handleSignIn = (provider: string) => {
-    signIn(provider, { callbackUrl: "/#apoie" });
+    // In production, use next-auth signIn
+    console.log("Sign in with:", provider);
   };
 
-  // For now, show the unauthenticated state
   return (
     <SupportButton
       isAuthenticated={false}
