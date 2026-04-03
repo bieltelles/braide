@@ -1,0 +1,165 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==================== AUTH ====================
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ==================== USERS ====================
+
+model User {
+  id          String    @id @default(cuid())
+  name        String?
+  email       String?   @unique
+  emailVerified DateTime?
+  image       String?
+  city        String?
+  isSupporter Boolean   @default(false)
+  supportedAt DateTime?
+  isAdmin     Boolean   @default(false)
+  accounts    Account[]
+  sessions    Session[]
+  suggestions Suggestion[]
+  createdAt   DateTime  @default(now())
+}
+
+// ==================== CITIES ====================
+
+model City {
+  id         String            @id @default(cuid())
+  name       String            @unique
+  latitude   Float
+  longitude  Float
+  population Int?
+  supporters Int               @default(0)
+  events     Event[]
+  locations  SupportLocation[]
+}
+
+// ==================== EVENTS ====================
+
+model Event {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  cityId      String
+  city        City      @relation(fields: [cityId], references: [id])
+  date        DateTime
+  endDate     DateTime?
+  location    String?
+  type        String    // visita, comicio, reuniao, caravana
+  status      String    @default("scheduled") // scheduled, completed, cancelled
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// ==================== SUGGESTIONS ====================
+
+model Suggestion {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  category    String    // saude, educacao, infraestrutura, seguranca, economia, meio_ambiente
+  content     String
+  status      String    @default("pending") // pending, approved, rejected
+  moderatedBy String?
+  moderatedAt DateTime?
+  createdAt   DateTime  @default(now())
+}
+
+// ==================== DOWNLOADS ====================
+
+model DownloadItem {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  category    String   // musicas, fotos, materiais, jingles, videos
+  fileUrl     String
+  fileSize    Int?
+  fileType    String?
+  thumbnail   String?
+  downloads   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
+
+// ==================== SUPPORT LOCATIONS ====================
+
+model SupportLocation {
+  id        String   @id @default(cuid())
+  name      String
+  address   String
+  cityId    String
+  city      City     @relation(fields: [cityId], references: [id])
+  latitude  Float
+  longitude Float
+  type      String   // comite, adesivo, bandeira
+  phone     String?
+  openHours String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+// ==================== CMS CONTENT ====================
+
+model ContentBlock {
+  id        String   @id @default(cuid())
+  page      String   // home, trajetoria, plano, downloads
+  section   String   // hero, about, stats, etc
+  title     String?
+  content   Json     // flexible content
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+}
+
+// ==================== GOVERNMENT PLAN ====================
+
+model GovernmentPlan {
+  id          String  @id @default(cuid())
+  category    String  // saude, educacao, seguranca, infraestrutura, economia, meio_ambiente
+  title       String
+  description String
+  icon        String?
+  goals       Json    // Array of goals
+  order       Int     @default(0)
+  isActive    Boolean @default(true)
+}
