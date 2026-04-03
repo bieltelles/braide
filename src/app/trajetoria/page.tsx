@@ -1,25 +1,36 @@
 import type { Metadata } from "next";
+import { Timeline } from "@/components/trajectory/Timeline";
+import { Achievements } from "@/components/trajectory/Achievements";
 
 export const metadata: Metadata = {
   title: "Trajetória Política",
-  description: "Conheça a trajetória política de Eduardo Braide e seus resultados como prefeito de São Luís.",
+  description:
+    "Conheça a trajetória política de Eduardo Braide: de vereador a prefeito mais votado da história de São Luís.",
 };
 
 export default function TrajetoriaPage() {
   return (
     <div className="pt-24 pb-16">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* Header */}
         <div className="text-center mb-16">
+          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary rounded-full px-4 py-1.5 mb-4">
+            <span className="text-sm font-semibold">Mais de 20 anos de vida pública</span>
+          </div>
           <h1 className="text-4xl sm:text-5xl font-extrabold text-foreground mb-4">
             Trajetória <span className="text-primary">Política</span>
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Mais de 20 anos de vida pública dedicados ao Maranhão.
+            Uma carreira dedicada ao Maranhão, com resultados comprovados que falam por si.
+            De vereador ao prefeito mais votado da história de São Luís.
           </p>
         </div>
-        <div className="text-center text-muted-foreground py-20">
-          Em breve: Timeline interativa com conquistas e resultados.
-        </div>
+
+        {/* Timeline */}
+        <Timeline />
+
+        {/* Achievements */}
+        <Achievements />
       </div>
     </div>
   );
