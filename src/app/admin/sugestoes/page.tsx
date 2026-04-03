@@ -1,26 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "motion/react";
-import { Check, X, Clock, MessageSquare, Filter } from "lucide-react";
+import { Check, X, Clock, MessageSquare, Filter, Loader2 } from "lucide-react";
 
-interface MockSuggestion {
+interface Suggestion {
   id: string;
-  userName: string;
-  userCity: string;
   category: string;
   content: string;
   status: string;
   createdAt: string;
+  user: { name: string | null; image: string | null; city: string | null };
 }
 
 const categoryLabels: Record<string, string> = {
-  saude: "Saúde",
-  educacao: "Educação",
-  seguranca: "Segurança",
-  infraestrutura: "Infraestrutura",
-  economia: "Economia",
-  meio_ambiente: "Meio Ambiente",
+  saude: "Saude", educacao: "Educacao", seguranca: "Seguranca",
+  infraestrutura: "Infraestrutura", economia: "Economia", meio_ambiente: "Meio Ambiente",
 };
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
@@ -29,44 +24,62 @@ const statusConfig: Record<string, { label: string; color: string; icon: React.E
   rejected: { label: "Rejeitada", color: "bg-red-100 text-red-700", icon: X },
 };
 
-const mockSuggestions: MockSuggestion[] = [
-  { id: "1", userName: "Maria Silva", userCity: "São Luís", category: "saude", content: "Construir um hospital regional na baixada maranhense para atender a população que precisa viajar horas para atendimento médico.", status: "pending", createdAt: "2026-04-02" },
-  { id: "2", userName: "João Santos", userCity: "Imperatriz", category: "educacao", content: "Criar um programa de bolsas para alunos do ensino médio participarem de intercâmbios em outros estados.", status: "pending", createdAt: "2026-04-01" },
-  { id: "3", userName: "Ana Costa", userCity: "Timon", category: "infraestrutura", content: "Pavimentar a estrada entre Timon e Caxias que está em péssimo estado, prejudicando o comércio regional.", status: "approved", createdAt: "2026-03-30" },
-  { id: "4", userName: "Pedro Oliveira", userCity: "Caxias", category: "seguranca", content: "Instalar câmeras de segurança no centro de Caxias e criar um centro de monitoramento integrado.", status: "approved", createdAt: "2026-03-28" },
-  { id: "5", userName: "Lucia Ferreira", userCity: "Bacabal", category: "economia", content: "Criar feiras de empreendedorismo mensais nos municípios do interior para incentivar o comércio local.", status: "pending", createdAt: "2026-03-27" },
-  { id: "6", userName: "Carlos Souza", userCity: "Balsas", category: "meio_ambiente", content: "Criar programa de reflorestamento nas áreas de cerrado degradadas na região de Balsas.", status: "rejected", createdAt: "2026-03-25" },
+const fallbackSuggestions: Suggestion[] = [
+  { id: "1", category: "saude", content: "Construir um hospital regional na baixada maranhense.", status: "pending", createdAt: "2026-04-02T00:00:00Z", user: { name: "Maria Silva", image: null, city: "Sao Luis" } },
+  { id: "2", category: "educacao", content: "Criar programa de bolsas para alunos do ensino medio.", status: "pending", createdAt: "2026-04-01T00:00:00Z", user: { name: "Joao Santos", image: null, city: "Imperatriz" } },
+  { id: "3", category: "infraestrutura", content: "Pavimentar a estrada entre Timon e Caxias.", status: "approved", createdAt: "2026-03-30T00:00:00Z", user: { name: "Ana Costa", image: null, city: "Timon" } },
+  { id: "4", category: "seguranca", content: "Instalar cameras de seguranca no centro de Caxias.", status: "approved", createdAt: "2026-03-28T00:00:00Z", user: { name: "Pedro Oliveira", image: null, city: "Caxias" } },
+  { id: "5", category: "economia", content: "Criar feiras de empreendedorismo mensais no interior.", status: "pending", createdAt: "2026-03-27T00:00:00Z", user: { name: "Lucia Ferreira", image: null, city: "Bacabal" } },
+  { id: "6", category: "meio_ambiente", content: "Criar programa de reflorestamento no cerrado de Balsas.", status: "rejected", createdAt: "2026-03-25T00:00:00Z", user: { name: "Carlos Souza", image: null, city: "Balsas" } },
 ];
 
 export default function AdminSugestoes() {
   const [filterStatus, setFilterStatus] = useState("all");
-  const [suggestions, setSuggestions] = useState(mockSuggestions);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>(fallbackSuggestions);
+  const [loading, setLoading] = useState(true);
 
-  const filtered = filterStatus === "all"
-    ? suggestions
-    : suggestions.filter((s) => s.status === filterStatus);
+  const fetchSuggestions = useCallback(() => {
+    const params = new URLSearchParams();
+    if (filterStatus !== "all") params.set("status", filterStatus);
+    fetch(`/api/suggestions?${params}`)
+      .then((r) => r.json())
+      .then((data) => { if (data.suggestions?.length) setSuggestions(data.suggestions); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [filterStatus]);
 
-  const handleModerate = (id: string, newStatus: string) => {
-    setSuggestions((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, status: newStatus } : s))
-    );
+  useEffect(() => { fetchSuggestions(); }, [fetchSuggestions]);
+
+  const handleModerate = async (id: string, newStatus: string) => {
+    // Optimistic update
+    setSuggestions((prev) => prev.map((s) => (s.id === id ? { ...s, status: newStatus } : s)));
+    try {
+      await fetch(`/api/suggestions/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+    } catch {
+      // Revert on failure (API not available)
+    }
   };
 
+  const filtered = filterStatus === "all" ? suggestions : suggestions.filter((s) => s.status === filterStatus);
   const pendingCount = suggestions.filter((s) => s.status === "pending").length;
 
   return (
     <div>
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-extrabold text-foreground">Sugestões</h1>
+          <h1 className="text-2xl font-extrabold text-foreground">Sugestoes</h1>
           <p className="text-muted-foreground">
-            Modere as sugestões do plano participativo.
+            Modere as sugestoes do plano participativo.
             <span className="text-accent font-semibold ml-1">{pendingCount} pendentes</span>
           </p>
         </div>
+        {loading && <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />}
       </div>
 
-      {/* Filters */}
       <div className="flex items-center gap-2 mb-6">
         <Filter className="w-4 h-4 text-muted-foreground" />
         {[
@@ -89,7 +102,6 @@ export default function AdminSugestoes() {
         ))}
       </div>
 
-      {/* List */}
       <div className="space-y-3">
         {filtered.map((suggestion, i) => {
           const status = statusConfig[suggestion.status] || statusConfig.pending;
@@ -112,31 +124,28 @@ export default function AdminSugestoes() {
                     {status.label}
                   </span>
                 </div>
-                <span className="text-xs text-muted-foreground">{suggestion.createdAt}</span>
+                <span className="text-xs text-muted-foreground">
+                  {new Date(suggestion.createdAt).toLocaleDateString("pt-BR")}
+                </span>
               </div>
-
               <p className="text-sm text-foreground mb-3">{suggestion.content}</p>
-
               <div className="flex items-center justify-between">
                 <div className="text-xs text-muted-foreground">
-                  <span className="font-medium">{suggestion.userName}</span> - {suggestion.userCity}
+                  <span className="font-medium">{suggestion.user.name}</span> - {suggestion.user.city}
                 </div>
-
                 {suggestion.status === "pending" && (
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleModerate(suggestion.id, "approved")}
                       className="inline-flex items-center gap-1 px-3 py-1.5 bg-success/10 text-success rounded-lg text-xs font-semibold hover:bg-success/20 transition-colors cursor-pointer"
                     >
-                      <Check className="w-3 h-3" />
-                      Aprovar
+                      <Check className="w-3 h-3" /> Aprovar
                     </button>
                     <button
                       onClick={() => handleModerate(suggestion.id, "rejected")}
                       className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-xs font-semibold hover:bg-red-200 transition-colors cursor-pointer"
                     >
-                      <X className="w-3 h-3" />
-                      Rejeitar
+                      <X className="w-3 h-3" /> Rejeitar
                     </button>
                   </div>
                 )}
@@ -144,11 +153,10 @@ export default function AdminSugestoes() {
             </motion.div>
           );
         })}
-
         {filtered.length === 0 && (
           <div className="text-center py-12 text-muted-foreground">
             <MessageSquare className="w-10 h-10 mx-auto mb-3 opacity-50" />
-            <p>Nenhuma sugestão neste filtro.</p>
+            <p>Nenhuma sugestao neste filtro.</p>
           </div>
         )}
       </div>

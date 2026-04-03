@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Navbar } from "@/components/shared/Navbar";
 import { Footer } from "@/components/shared/Footer";
 import { WhatsAppButton } from "@/components/shared/WhatsAppButton";
+import { Providers } from "@/components/shared/Providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -45,15 +46,17 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className="h-full antialiased">
       <head>
-        <link rel="manifest" href="/braide/manifest.json" />
+        <link rel="manifest" href="/manifest.json" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </head>
       <body className="min-h-full flex flex-col font-sans">
-        <Navbar />
-        <main className="flex-1">{children}</main>
-        <Footer />
-        <WhatsAppButton />
+        <Providers>
+          <Navbar />
+          <main className="flex-1">{children}</main>
+          <Footer />
+          <WhatsAppButton />
+        </Providers>
       </body>
     </html>
   );

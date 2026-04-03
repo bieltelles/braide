@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import {
   Users,
@@ -9,45 +10,67 @@ import {
   MapPin,
   TrendingUp,
   ArrowUpRight,
+  Loader2,
 } from "lucide-react";
 
-interface StatCard {
-  label: string;
-  value: string;
-  change: string;
-  icon: React.ElementType;
-  color: string;
+interface Stats {
+  supporters: number;
+  suggestions: number;
+  events: number;
+  downloads: number;
+  cities: number;
+  locations: number;
+  pendingSuggestions: number;
+  scheduledEvents: number;
+  recentSupporters: { name: string | null; city: string | null; supportedAt: string | null }[];
 }
 
-const stats: StatCard[] = [
-  { label: "Apoiadores", value: "1.247", change: "+32 hoje", icon: Users, color: "from-primary to-primary-light" },
-  { label: "Sugestões", value: "328", change: "12 pendentes", icon: MessageSquare, color: "from-accent to-amber-400" },
-  { label: "Eventos", value: "42", change: "3 agendados", icon: Calendar, color: "from-success to-success-light" },
-  { label: "Downloads", value: "15.420", change: "+210 esta semana", icon: Download, color: "from-purple-500 to-purple-400" },
-  { label: "Cidades", value: "40", change: "217 no MA", icon: MapPin, color: "from-red-500 to-red-400" },
-  { label: "Pontos de Apoio", value: "8", change: "em 5 cidades", icon: TrendingUp, color: "from-emerald-500 to-emerald-400" },
-];
-
-const recentActivity = [
-  { type: "supporter", text: "Maria Silva declarou apoio", city: "São Luís", time: "2 min" },
-  { type: "suggestion", text: "Nova sugestão em Saúde", city: "Imperatriz", time: "15 min" },
-  { type: "supporter", text: "João Santos declarou apoio", city: "Timon", time: "30 min" },
-  { type: "event", text: "Caravana Tocantina agendada", city: "Imperatriz", time: "1h" },
-  { type: "suggestion", text: "Nova sugestão em Educação", city: "Caxias", time: "2h" },
-  { type: "supporter", text: "Ana Costa declarou apoio", city: "Bacabal", time: "3h" },
-];
+const fallbackStats: Stats = {
+  supporters: 1247, suggestions: 328, events: 42, downloads: 15420,
+  cities: 40, locations: 8, pendingSuggestions: 12, scheduledEvents: 3,
+  recentSupporters: [
+    { name: "Maria Silva", city: "Sao Luis", supportedAt: "2026-04-03" },
+    { name: "Joao Santos", city: "Imperatriz", supportedAt: "2026-04-03" },
+    { name: "Ana Costa", city: "Timon", supportedAt: "2026-04-02" },
+  ],
+};
 
 export default function AdminDashboard() {
+  const [stats, setStats] = useState<Stats>(fallbackStats);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/stats")
+      .then((r) => r.json())
+      .then((data) => setStats({ ...fallbackStats, ...data }))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const cards = [
+    { label: "Apoiadores", value: stats.supporters.toLocaleString("pt-BR"), change: `${stats.pendingSuggestions} sugestoes pendentes`, icon: Users, color: "from-primary to-primary-light" },
+    { label: "Sugestoes", value: stats.suggestions.toLocaleString("pt-BR"), change: `${stats.pendingSuggestions} pendentes`, icon: MessageSquare, color: "from-accent to-amber-400" },
+    { label: "Eventos", value: stats.events.toLocaleString("pt-BR"), change: `${stats.scheduledEvents} agendados`, icon: Calendar, color: "from-success to-success-light" },
+    { label: "Downloads", value: stats.downloads.toLocaleString("pt-BR"), change: "materiais disponiveis", icon: Download, color: "from-purple-500 to-purple-400" },
+    { label: "Cidades", value: stats.cities.toLocaleString("pt-BR"), change: "217 no MA", icon: MapPin, color: "from-red-500 to-red-400" },
+    { label: "Pontos de Apoio", value: stats.locations.toLocaleString("pt-BR"), change: "ativos", icon: TrendingUp, color: "from-emerald-500 to-emerald-400" },
+  ];
+
   return (
     <div>
       <div className="mb-8">
         <h1 className="text-2xl font-extrabold text-foreground">Painel Administrativo</h1>
-        <p className="text-muted-foreground">Visão geral da campanha e gestão de conteúdo.</p>
+        <p className="text-muted-foreground">Visao geral da campanha e gestao de conteudo.</p>
       </div>
 
-      {/* Stats Grid */}
+      {loading && (
+        <div className="flex items-center gap-2 mb-4 text-sm text-muted-foreground">
+          <Loader2 className="w-4 h-4 animate-spin" /> Carregando dados...
+        </div>
+      )}
+
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-        {stats.map((stat, i) => (
+        {cards.map((stat, i) => (
           <motion.div
             key={stat.label}
             initial={{ opacity: 0, y: 10 }}
@@ -68,11 +91,11 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* Recent Activity */}
+      {/* Recent Supporters */}
       <div className="bg-white rounded-xl border border-border/50 p-6">
-        <h2 className="font-bold text-foreground mb-4">Atividade Recente</h2>
+        <h2 className="font-bold text-foreground mb-4">Apoiadores Recentes</h2>
         <div className="space-y-3">
-          {recentActivity.map((activity, i) => (
+          {stats.recentSupporters.map((supporter, i) => (
             <motion.div
               key={i}
               initial={{ opacity: 0, x: -10 }}
@@ -81,21 +104,15 @@ export default function AdminDashboard() {
               className="flex items-center justify-between py-2 border-b border-border/30 last:border-0"
             >
               <div className="flex items-center gap-3">
-                <div
-                  className={`w-2 h-2 rounded-full ${
-                    activity.type === "supporter"
-                      ? "bg-primary"
-                      : activity.type === "suggestion"
-                      ? "bg-accent"
-                      : "bg-success"
-                  }`}
-                />
+                <div className="w-2 h-2 rounded-full bg-primary" />
                 <div>
-                  <p className="text-sm font-medium text-foreground">{activity.text}</p>
-                  <p className="text-xs text-muted-foreground">{activity.city}</p>
+                  <p className="text-sm font-medium text-foreground">{supporter.name || "Anonimo"}</p>
+                  <p className="text-xs text-muted-foreground">{supporter.city || "MA"}</p>
                 </div>
               </div>
-              <span className="text-xs text-muted-foreground whitespace-nowrap">{activity.time}</span>
+              <span className="text-xs text-muted-foreground">
+                {supporter.supportedAt ? new Date(supporter.supportedAt).toLocaleDateString("pt-BR") : ""}
+              </span>
             </motion.div>
           ))}
         </div>

@@ -1,22 +1,42 @@
 "use client";
 
+import { useSession, signIn } from "next-auth/react";
+import { useState, useEffect } from "react";
 import { SupportButton } from "./SupportButton";
 
 export function SupportSection() {
+  const { data: session } = useSession();
+  const [isSupporter, setIsSupporter] = useState(false);
+
+  useEffect(() => {
+    if (session?.user) {
+      fetch("/api/supporters")
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.isSupporter) setIsSupporter(true);
+        })
+        .catch(() => {});
+    }
+  }, [session]);
+
   const handleSupport = async () => {
-    // In production, POST to /api/supporters
-    console.log("Support registered");
+    try {
+      const res = await fetch("/api/supporters", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (res.ok) setIsSupporter(true);
+    } catch {}
   };
 
   const handleSignIn = (provider: string) => {
-    // In production, use next-auth signIn
-    console.log("Sign in with:", provider);
+    signIn(provider);
   };
 
   return (
     <SupportButton
-      isAuthenticated={false}
-      isSupporter={false}
+      isAuthenticated={!!session?.user}
+      isSupporter={isSupporter}
       onSupport={handleSupport}
       onSignIn={handleSignIn}
     />
