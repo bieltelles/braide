@@ -42,6 +42,7 @@ export default function AdminEventos() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [cities, setCities] = useState<CityOption[]>([]);
+  const [citiesLoading, setCitiesLoading] = useState(true);
   const [citySearch, setCitySearch] = useState("");
   const [form, setForm] = useState({ title: "", type: "", cityId: "", date: "", location: "", description: "" });
 
@@ -59,7 +60,8 @@ export default function AdminEventos() {
     fetch("/api/cities")
       .then((r) => r.json())
       .then((data) => { if (data.cities?.length) setCities(data.cities); })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setCitiesLoading(false));
   }, []);
 
   const filteredCities = citySearch
@@ -187,31 +189,46 @@ export default function AdminEventos() {
             </div>
             <div className="relative">
               <label className="block text-sm font-medium text-foreground mb-1">
-                Município {selectedCityName && <span className="text-primary font-normal">— {selectedCityName}</span>}
+                Município
+                {selectedCityName && <span className="text-primary font-normal ml-1">— {selectedCityName}</span>}
+                {citiesLoading && <span className="text-muted-foreground font-normal ml-1 text-xs">(carregando...)</span>}
+                {!citiesLoading && cities.length > 0 && <span className="text-muted-foreground font-normal ml-1 text-xs">({cities.length} municípios)</span>}
               </label>
-              <input
-                type="text"
-                value={citySearch}
-                onChange={(e) => { setCitySearch(e.target.value); setForm({ ...form, cityId: "" }); }}
-                placeholder="Buscar município..."
-                className="w-full px-3 py-2 rounded-lg border border-border/50 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
-              {citySearch && !form.cityId && filteredCities.length > 0 && (
-                <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border border-border/50 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                  {filteredCities.map((city) => (
-                    <button
-                      key={city.id}
-                      onClick={() => { setForm({ ...form, cityId: city.id }); setCitySearch(city.name); }}
-                      className="w-full text-left px-3 py-2 text-sm hover:bg-primary/5 hover:text-primary transition-colors cursor-pointer"
-                    >
-                      {city.name}
-                    </button>
-                  ))}
-                </div>
-              )}
-              {citySearch && !form.cityId && filteredCities.length === 0 && (
-                <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border border-border/50 rounded-lg shadow-lg p-3 text-xs text-muted-foreground">
-                  Nenhum município encontrado
+              {cities.length > 0 ? (
+                <>
+                  <input
+                    type="text"
+                    value={citySearch}
+                    onChange={(e) => { setCitySearch(e.target.value); setForm({ ...form, cityId: "" }); }}
+                    placeholder="Digite para buscar município..."
+                    className="w-full px-3 py-2 rounded-lg border border-border/50 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  />
+                  {citySearch && !form.cityId && filteredCities.length > 0 && (
+                    <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border border-border/50 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      {filteredCities.map((city) => (
+                        <button
+                          key={city.id}
+                          onClick={() => { setForm({ ...form, cityId: city.id }); setCitySearch(city.name); }}
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-primary/5 hover:text-primary transition-colors cursor-pointer"
+                        >
+                          {city.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {citySearch && !form.cityId && filteredCities.length === 0 && (
+                    <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border border-border/50 rounded-lg shadow-lg p-3 text-xs text-muted-foreground">
+                      Nenhum município encontrado para &quot;{citySearch}&quot;
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border/50 text-sm text-muted-foreground">
+                  {citiesLoading ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Carregando municípios...</>
+                  ) : (
+                    <>Erro ao carregar municípios. Tente recarregar a página.</>
+                  )}
                 </div>
               )}
             </div>
