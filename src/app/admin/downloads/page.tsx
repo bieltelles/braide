@@ -52,6 +52,7 @@ export default function AdminDownloads() {
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ title: "", category: "", description: "" });
+  const [error, setError] = useState("");
 
   // Upload state
   const [uploadedFile, setUploadedFile] = useState<{
@@ -158,6 +159,7 @@ export default function AdminDownloads() {
   const handleCreate = async () => {
     if (!form.title || !form.category || !uploadedFile) return;
     setSaving(true);
+    setError("");
     try {
       const res = await fetch("/api/downloads", {
         method: "POST",
@@ -178,8 +180,14 @@ export default function AdminDownloads() {
         setUploadedFile(null);
         setUploadProgress(0);
         setShowForm(false);
+        setError("");
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setError(err.error || `Erro ao salvar (${res.status})`);
       }
-    } catch {}
+    } catch (e) {
+      setError("Erro de conexão ao salvar material");
+    }
     setSaving(false);
   };
 
@@ -355,8 +363,13 @@ export default function AdminDownloads() {
               />
             </div>
           </div>
+          {error && (
+            <div className="mt-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+              {error}
+            </div>
+          )}
           <div className="flex justify-end gap-2 mt-4">
-            <Button variant="ghost" size="sm" onClick={() => { setShowForm(false); if (uploadedFile) removeUploadedFile(); }}>
+            <Button variant="ghost" size="sm" onClick={() => { setShowForm(false); setError(""); if (uploadedFile) removeUploadedFile(); }}>
               Cancelar
             </Button>
             <Button size="sm" onClick={handleCreate} disabled={saving || !form.title || !form.category || !uploadedFile}>
