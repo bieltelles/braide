@@ -10,12 +10,17 @@ interface EventItem {
   title: string;
   description: string | null;
   cityId: string;
-  city: { id: string; name: string };
+  city: { id: string; name: string } | null;
   date: string;
   endDate: string | null;
   location: string | null;
   type: string;
   status: string;
+}
+
+interface CityOption {
+  id: string;
+  name: string;
 }
 
 const typeLabels: Record<string, string> = {
@@ -28,9 +33,6 @@ const typeLabels: Record<string, string> = {
 const fallbackEvents: EventItem[] = [
   { id: "1", title: "Caravana da Transformação - Tocantina", description: null, cityId: "1", city: { id: "1", name: "Imperatriz" }, date: "2026-04-15", endDate: null, location: "Praça Brasil, Centro", type: "caravana", status: "scheduled" },
   { id: "2", title: "Reunião com lideranças", description: null, cityId: "2", city: { id: "2", name: "Balsas" }, date: "2026-04-12", endDate: null, location: "Centro de Convenções", type: "reuniao", status: "scheduled" },
-  { id: "3", title: "Visita a obras", description: null, cityId: "3", city: { id: "3", name: "Timon" }, date: "2026-04-08", endDate: null, location: "Diversos pontos", type: "visita", status: "scheduled" },
-  { id: "4", title: "Caravana pelo Baixo Parnaíba", description: null, cityId: "4", city: { id: "4", name: "Chapadinha" }, date: "2026-03-28", endDate: null, location: "Praça Central", type: "caravana", status: "completed" },
-  { id: "5", title: "Reunião com prefeitos", description: null, cityId: "5", city: { id: "5", name: "Bacabal" }, date: "2026-03-22", endDate: null, location: "Câmara Municipal", type: "reuniao", status: "completed" },
 ];
 
 export default function AdminEventos() {
@@ -38,13 +40,15 @@ export default function AdminEventos() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [cities, setCities] = useState<CityOption[]>([]);
+  const [citySearch, setCitySearch] = useState("");
   const [form, setForm] = useState({ title: "", type: "", cityId: "", date: "", location: "", description: "" });
-  const [cities, setCities] = useState<{ id: string; name: string }[]>([]);
 
   const fetchEvents = useCallback(() => {
     fetch("/api/events")
       .then((r) => r.json())
-      .then((data) => { if (data.events?.length) setEvents(data.events); })
+      .then((data) => { if (data.events) setEvents(data.events); })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -58,29 +62,61 @@ export default function AdminEventos() {
       .catch(() => {});
   }, []);
 
+  const filteredCities = citySearch
+    ? cities.filter((c) => c.name.toLowerCase().includes(citySearch.toLowerCase())).slice(0, 15)
+    : cities.slice(0, 15);
+
+  const selectedCityName = cities.find((c) => c.id === form.cityId)?.name || "";
+
+  const setupAndRetry = async (body: Record<string, unknown>) => {
+    setError("Configurando banco de dados...");
+    await fetch("/api/setup", { method: "POST" });
+    return fetch("/api/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  };
+
   const handleCreate = async () => {
-    if (!form.title || !form.type || !form.date) return;
+    if (!form.title || !form.type || !form.date || !form.cityId) return;
     setSaving(true);
+    setError("");
+
+    const body = {
+      title: form.title,
+      type: form.type,
+      cityId: form.cityId,
+      date: form.date,
+      location: form.location || undefined,
+      description: form.description || undefined,
+    };
+
     try {
-      const res = await fetch("/api/events", {
+      let res = await fetch("/api/events", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: form.title,
-          type: form.type,
-          cityId: form.cityId || undefined,
-          date: form.date,
-          location: form.location || undefined,
-          description: form.description || undefined,
-        }),
+        body: JSON.stringify(body),
       });
+
+      if (!res.ok && res.status === 500) {
+        res = await setupAndRetry(body);
+      }
+
       if (res.ok) {
         const data = await res.json();
         setEvents((prev) => [data.event, ...prev]);
         setForm({ title: "", type: "", cityId: "", date: "", location: "", description: "" });
+        setCitySearch("");
         setShowForm(false);
+        setError("");
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setError(err.error || `Erro ao salvar (${res.status})`);
       }
-    } catch {}
+    } catch {
+      setError("Erro de conexão");
+    }
     setSaving(false);
   };
 
@@ -143,33 +179,40 @@ export default function AdminEventos() {
                 onChange={(e) => setForm({ ...form, type: e.target.value })}
                 className="w-full px-3 py-2 rounded-lg border border-border/50 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               >
-                <option value="">Selecione...</option>
+                <option value="">Selecione o tipo...</option>
                 {Object.entries(typeLabels).map(([v, l]) => (
                   <option key={v} value={v}>{l}</option>
                 ))}
               </select>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Cidade</label>
-              {cities.length > 0 ? (
-                <select
-                  value={form.cityId}
-                  onChange={(e) => setForm({ ...form, cityId: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg border border-border/50 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                >
-                  <option value="">Selecione...</option>
-                  {cities.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
+            <div className="relative">
+              <label className="block text-sm font-medium text-foreground mb-1">
+                Município {selectedCityName && <span className="text-primary font-normal">— {selectedCityName}</span>}
+              </label>
+              <input
+                type="text"
+                value={citySearch}
+                onChange={(e) => { setCitySearch(e.target.value); setForm({ ...form, cityId: "" }); }}
+                placeholder="Buscar município..."
+                className="w-full px-3 py-2 rounded-lg border border-border/50 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+              {citySearch && !form.cityId && filteredCities.length > 0 && (
+                <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border border-border/50 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                  {filteredCities.map((city) => (
+                    <button
+                      key={city.id}
+                      onClick={() => { setForm({ ...form, cityId: city.id }); setCitySearch(city.name); }}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-primary/5 hover:text-primary transition-colors cursor-pointer"
+                    >
+                      {city.name}
+                    </button>
                   ))}
-                </select>
-              ) : (
-                <input
-                  type="text"
-                  value={form.cityId}
-                  onChange={(e) => setForm({ ...form, cityId: e.target.value })}
-                  placeholder="ID da cidade"
-                  className="w-full px-3 py-2 rounded-lg border border-border/50 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                />
+                </div>
+              )}
+              {citySearch && !form.cityId && filteredCities.length === 0 && (
+                <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border border-border/50 rounded-lg shadow-lg p-3 text-xs text-muted-foreground">
+                  Nenhum município encontrado
+                </div>
               )}
             </div>
             <div>
@@ -182,19 +225,26 @@ export default function AdminEventos() {
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="block text-sm font-medium text-foreground mb-1">Local</label>
+              <label className="block text-sm font-medium text-foreground mb-1">Local (endereço)</label>
               <input
                 type="text"
                 value={form.location}
                 onChange={(e) => setForm({ ...form, location: e.target.value })}
-                placeholder="Endereço / local do evento"
+                placeholder="Ex: Praça Central, Centro"
                 className="w-full px-3 py-2 rounded-lg border border-border/50 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
             </div>
           </div>
+
+          {error && (
+            <div className="mt-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+              {error}
+            </div>
+          )}
+
           <div className="flex justify-end gap-2 mt-4">
-            <Button variant="ghost" size="sm" onClick={() => setShowForm(false)}>Cancelar</Button>
-            <Button size="sm" onClick={handleCreate} disabled={saving || !form.title || !form.type || !form.date}>
+            <Button variant="ghost" size="sm" onClick={() => { setShowForm(false); setError(""); }}>Cancelar</Button>
+            <Button size="sm" onClick={handleCreate} disabled={saving || !form.title || !form.type || !form.date || !form.cityId}>
               {saving && <Loader2 className="w-3 h-3 animate-spin mr-1" />}
               Salvar Evento
             </Button>
@@ -245,25 +295,13 @@ export default function AdminEventos() {
               </div>
               {event.status === "scheduled" && (
                 <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => handleStatusChange(event.id, "completed")}
-                    className="p-1.5 rounded-lg hover:bg-green-50 transition-colors cursor-pointer"
-                    title="Marcar como realizado"
-                  >
+                  <button onClick={() => handleStatusChange(event.id, "completed")} className="p-1.5 rounded-lg hover:bg-green-50 transition-colors cursor-pointer" title="Marcar como realizado">
                     <Check className="w-4 h-4 text-success" />
                   </button>
-                  <button
-                    onClick={() => handleStatusChange(event.id, "cancelled")}
-                    className="p-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
-                    title="Cancelar evento"
-                  >
+                  <button onClick={() => handleStatusChange(event.id, "cancelled")} className="p-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer" title="Cancelar evento">
                     <X className="w-4 h-4 text-red-500" />
                   </button>
-                  <button
-                    onClick={() => handleDelete(event.id)}
-                    className="p-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
-                    title="Excluir evento"
-                  >
+                  <button onClick={() => handleDelete(event.id)} className="p-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer" title="Excluir evento">
                     <Trash2 className="w-4 h-4 text-red-500" />
                   </button>
                 </div>
@@ -271,7 +309,7 @@ export default function AdminEventos() {
             </div>
           </motion.div>
         ))}
-        {events.length === 0 && (
+        {events.length === 0 && !loading && (
           <div className="text-center py-12 text-muted-foreground">
             <Calendar className="w-10 h-10 mx-auto mb-3 opacity-50" />
             <p>Nenhum evento cadastrado.</p>

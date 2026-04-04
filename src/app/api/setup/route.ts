@@ -10,12 +10,21 @@ export async function POST() {
     // Use raw SQL to create tables if they don't exist
     const { prisma } = await import("@/lib/prisma");
 
-    // Try a simple query to see if tables exist
+    // Check if tables already exist
+    let tablesExist = false;
     try {
       await prisma.$queryRawUnsafe(`SELECT 1 FROM "DownloadItem" LIMIT 1`);
-      return NextResponse.json({ status: "ok", message: "Tabelas já existem" });
+      tablesExist = true;
     } catch {
-      // Tables don't exist, create them
+      // Tables don't exist, will create them below
+    }
+
+    // Check if cities are seeded
+    if (tablesExist) {
+      const cityCount = await prisma.$queryRawUnsafe(`SELECT COUNT(*)::int as count FROM "City"`) as { count: number }[];
+      if (cityCount[0]?.count >= 200) {
+        return NextResponse.json({ status: "ok", message: "Tabelas e cidades já existem" });
+      }
     }
 
     // Create all tables
@@ -206,7 +215,21 @@ export async function POST() {
       )
     `);
 
-    return NextResponse.json({ status: "ok", message: "Tabelas criadas com sucesso" });
+    // Seed cities
+    const { maranhaoCities } = await import("@/data/maranhao-cities");
+    const existingCities = await prisma.$queryRawUnsafe(`SELECT COUNT(*)::int as count FROM "City"`) as { count: number }[];
+    if (!existingCities[0]?.count) {
+      for (const city of maranhaoCities) {
+        await prisma.$queryRawUnsafe(
+          `INSERT INTO "City" ("id", "name", "latitude", "longitude", "population", "supporters")
+           VALUES (gen_random_uuid()::text, $1, $2, $3, $4, 0)
+           ON CONFLICT ("name") DO NOTHING`,
+          city.name, city.latitude, city.longitude, city.population || 0
+        );
+      }
+    }
+
+    return NextResponse.json({ status: "ok", message: `Tabelas criadas e ${maranhaoCities.length} municípios do MA inseridos` });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Erro desconhecido";
     return NextResponse.json({ error: msg }, { status: 500 });
