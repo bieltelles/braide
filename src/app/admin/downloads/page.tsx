@@ -156,12 +156,19 @@ export default function AdminDownloads() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  const setupDb = async () => {
+    try {
+      const res = await fetch("/api/setup", { method: "POST" });
+      return res.ok;
+    } catch { return false; }
+  };
+
   const handleCreate = async () => {
     if (!form.title || !form.category || !uploadedFile) return;
     setSaving(true);
     setError("");
     try {
-      const res = await fetch("/api/downloads", {
+      let res = await fetch("/api/downloads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -173,6 +180,27 @@ export default function AdminDownloads() {
           description: form.description || undefined,
         }),
       });
+
+      // If it fails (likely missing tables), try to auto-setup and retry
+      if (!res.ok && res.status === 500) {
+        setError("Configurando banco de dados...");
+        const setupOk = await setupDb();
+        if (setupOk) {
+          res = await fetch("/api/downloads", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              title: form.title,
+              category: form.category,
+              fileUrl: uploadedFile.url,
+              fileType: getFileExtension(uploadedFile.name),
+              fileSize: uploadedFile.size,
+              description: form.description || undefined,
+            }),
+          });
+        }
+      }
+
       if (res.ok) {
         const data = await res.json();
         setItems((prev) => [data.item, ...prev]);

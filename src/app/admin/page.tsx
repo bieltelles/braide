@@ -38,14 +38,41 @@ const fallbackStats: Stats = {
 export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats>(fallbackStats);
   const [loading, setLoading] = useState(true);
+  const [dbStatus, setDbStatus] = useState<"unknown" | "ok" | "error" | "setting-up">("unknown");
 
   useEffect(() => {
     fetch("/api/stats")
-      .then((r) => r.json())
-      .then((data) => setStats({ ...fallbackStats, ...data }))
-      .catch(() => {})
+      .then((r) => {
+        if (!r.ok) throw new Error("API error");
+        return r.json();
+      })
+      .then((data) => { setStats({ ...fallbackStats, ...data }); setDbStatus("ok"); })
+      .catch(() => { setDbStatus("error"); })
       .finally(() => setLoading(false));
   }, []);
+
+  const handleSetupDb = async () => {
+    setDbStatus("setting-up");
+    try {
+      const res = await fetch("/api/setup", { method: "POST" });
+      if (res.ok) {
+        setDbStatus("ok");
+        // Reload stats
+        const statsRes = await fetch("/api/stats");
+        if (statsRes.ok) {
+          const data = await statsRes.json();
+          setStats({ ...fallbackStats, ...data });
+        }
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || "Erro ao configurar banco");
+        setDbStatus("error");
+      }
+    } catch {
+      alert("Erro de conexão");
+      setDbStatus("error");
+    }
+  };
 
   const cards = [
     { label: "Apoiadores", value: stats.supporters.toLocaleString("pt-BR"), change: `${stats.pendingSuggestions} sugestoes pendentes`, icon: Users, color: "from-primary to-primary-light" },
@@ -66,6 +93,30 @@ export default function AdminDashboard() {
       {loading && (
         <div className="flex items-center gap-2 mb-4 text-sm text-muted-foreground">
           <Loader2 className="w-4 h-4 animate-spin" /> Carregando dados...
+        </div>
+      )}
+
+      {dbStatus === "error" && (
+        <div className="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200">
+          <p className="text-sm font-medium text-amber-800 mb-2">
+            Banco de dados precisa ser configurado
+          </p>
+          <p className="text-xs text-amber-700 mb-3">
+            As tabelas ainda não foram criadas. Clique no botão abaixo para configurar automaticamente.
+          </p>
+          <button
+            onClick={handleSetupDb}
+            className="px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 transition-colors cursor-pointer"
+          >
+            Configurar Banco de Dados
+          </button>
+        </div>
+      )}
+
+      {dbStatus === "setting-up" && (
+        <div className="mb-6 p-4 rounded-xl bg-blue-50 border border-blue-200 flex items-center gap-3">
+          <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+          <p className="text-sm text-blue-700">Criando tabelas no banco de dados...</p>
         </div>
       )}
 
