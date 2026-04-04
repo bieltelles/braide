@@ -95,8 +95,9 @@ model Event {
 
 model Suggestion {
   id          String    @id @default(cuid())
-  userId      String
-  user        User      @relation(fields: [userId], references: [id])
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id])
+  authorName  String?
   category    String    // saude, educacao, infraestrutura, seguranca, economia, meio_ambiente
   content     String
   status      String    @default("pending") // pending, approved, rejected

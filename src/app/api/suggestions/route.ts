@@ -1,6 +1,5 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
@@ -28,13 +27,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   const body = await request.json();
-  const { category, content } = body;
+  const { category, content, name } = body;
 
   if (!category || !content?.trim()) {
     return NextResponse.json({ error: "Campos obrigatorios: category, content" }, { status: 400 });
@@ -46,9 +40,9 @@ export async function POST(request: NextRequest) {
 
   const suggestion = await prisma.suggestion.create({
     data: {
-      userId: session.user.id,
       category,
       content: content.trim(),
+      authorName: name || "Anônimo",
     },
   });
 
