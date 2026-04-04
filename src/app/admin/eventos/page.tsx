@@ -89,6 +89,7 @@ export default function AdminEventos() {
       title: form.title,
       type: form.type,
       cityId: form.cityId,
+      cityName: selectedCityName, // send name so API can upsert if needed
       date: form.date,
       location: form.location || undefined,
       description: form.description || undefined,
