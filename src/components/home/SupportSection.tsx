@@ -18,17 +18,18 @@ export function SupportSection() {
   const user = session?.user as any;
   const isAuthenticated = !!user;
 
-  // Check supporter status from session (set by auth callback)
+  // Check supporter status from session
   useEffect(() => {
     if (user?.isSupporter) {
       setIsSupporter(true);
+      if (user?.city) setDetectedCity(user.city);
     }
   }, [user]);
 
-  // Auto-register when authenticated + geo available + not yet supporter
+  // Auto-register when returning from OAuth (URL has #apoie) + geo available
   useEffect(() => {
     if (!isAuthenticated || isSupporter || autoRegisterAttempted.current || status === "loading") return;
-    if (geo.loading) return; // wait for geo to resolve
+    if (geo.loading) return;
 
     autoRegisterAttempted.current = true;
 
@@ -37,7 +38,6 @@ export function SupportSection() {
       if (nearest) {
         setDetectedCity(nearest.name);
         setAutoRegistering(true);
-        // Auto-register with detected city
         fetch("/api/supporters", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -47,10 +47,16 @@ export function SupportSection() {
             longitude: geo.coords.longitude,
           }),
         })
-          .then((r) => {
+          .then(async (r) => {
             if (r.ok) {
               setIsSupporter(true);
-              update(); // refresh session to include isSupporter
+              await update();
+              // Notify map to reload and scroll to it
+              window.dispatchEvent(new CustomEvent("supporters-updated"));
+              setTimeout(() => {
+                const mapEl = document.getElementById("mapa-apoiadores");
+                if (mapEl) mapEl.scrollIntoView({ behavior: "smooth" });
+              }, 300);
             }
           })
           .catch(() => {})
@@ -58,7 +64,7 @@ export function SupportSection() {
         return;
       }
     }
-    // Geo failed or city too far — fallback will be shown by SupportButton
+    // Geo failed or city too far — fallback shown by SupportButton
   }, [isAuthenticated, isSupporter, status, geo.loading, geo.coords, update]);
 
   const handleManualSupport = async (city: string) => {
@@ -76,7 +82,13 @@ export function SupportSection() {
       if (res.ok) {
         setIsSupporter(true);
         setDetectedCity(city);
-        update();
+        await update();
+        // Notify map and scroll to it
+        window.dispatchEvent(new CustomEvent("supporters-updated"));
+        setTimeout(() => {
+          const mapEl = document.getElementById("mapa-apoiadores");
+          if (mapEl) mapEl.scrollIntoView({ behavior: "smooth" });
+        }, 300);
       }
     } catch {}
   };

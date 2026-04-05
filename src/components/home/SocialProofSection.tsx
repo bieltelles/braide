@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { SocialProof } from "./SocialProof";
 
@@ -47,10 +47,7 @@ export function SocialProofSection() {
   const [loaded, setLoaded] = useState(false);
   const geo = useGeolocation();
 
-  useEffect(() => {
-    // Wait for geo to resolve (or fail) before fetching so we can send coords
-    if (geo.loading) return;
-
+  const fetchSupporters = useCallback(() => {
     const params = new URLSearchParams();
     if (geo.coords) {
       params.set("lat", String(geo.coords.latitude));
@@ -66,7 +63,20 @@ export function SocialProofSection() {
       })
       .catch(() => {})
       .finally(() => setLoaded(true));
-  }, [geo.loading, geo.coords]);
+  }, [geo.coords]);
+
+  // Initial load once geo resolves
+  useEffect(() => {
+    if (geo.loading) return;
+    fetchSupporters();
+  }, [geo.loading, fetchSupporters]);
+
+  // Listen for "supporters-updated" event (fired by SmartSupportLink after registering)
+  useEffect(() => {
+    const handler = () => fetchSupporters();
+    window.addEventListener("supporters-updated", handler);
+    return () => window.removeEventListener("supporters-updated", handler);
+  }, [fetchSupporters]);
 
   if (!loaded) return null;
 
