@@ -60,17 +60,17 @@ export async function GET() {
       orderBy: { date: "asc" },
     });
 
-    // Unique visited cities (completed events) in date order
+    // All stops in date order (includes repeated cities for route calculation)
+    const allStops: CityCoord[] = [];
     const visitedCityNames = new Set<string>();
-    const visitedCities: CityCoord[] = [];
     for (const event of completedEvents) {
-      if (event.city && !visitedCityNames.has(event.city.name)) {
-        visitedCityNames.add(event.city.name);
-        visitedCities.push({
+      if (event.city) {
+        allStops.push({
           name: event.city.name,
           latitude: event.city.latitude,
           longitude: event.city.longitude,
         });
+        visitedCityNames.add(event.city.name);
       }
     }
 
@@ -88,14 +88,24 @@ export async function GET() {
       }
     }
 
-    const { totalKm, route } = calculateRouteKm(visitedCities);
+    const { totalKm, route } = calculateRouteKm(allStops);
+
+    // Unique visited cities for map markers
+    const uniqueVisitedCities: CityCoord[] = [];
+    const seenForMarkers = new Set<string>();
+    for (const stop of allStops) {
+      if (!seenForMarkers.has(stop.name)) {
+        seenForMarkers.add(stop.name);
+        uniqueVisitedCities.push(stop);
+      }
+    }
 
     return NextResponse.json({
       totalKm,
-      visitedCitiesCount: visitedCities.length,
+      visitedCitiesCount: visitedCityNames.size,
       completedEventsCount: completedEvents.length,
       scheduledEventsCount: scheduledEvents.length,
-      visitedCities,
+      visitedCities: uniqueVisitedCities,
       upcomingCities,
       route,
     });
