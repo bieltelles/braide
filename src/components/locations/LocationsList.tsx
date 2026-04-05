@@ -1,16 +1,17 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { MapPin, Phone, Clock, Building2, Tag, Flag } from "lucide-react";
+import { MapPin, Phone, Clock, Building2, Tag, Flag, Loader2 } from "lucide-react";
 
 interface SupportPoint {
   id: string;
   name: string;
   address: string;
-  city: string;
+  city: { id: string; name: string } | null;
   type: string;
-  phone?: string;
-  openHours?: string;
+  phone?: string | null;
+  openHours?: string | null;
 }
 
 const typeConfig: Record<string, { label: string; icon: React.ElementType; color: string }> = {
@@ -19,15 +20,15 @@ const typeConfig: Record<string, { label: string; icon: React.ElementType; color
   bandeira: { label: "Ponto de Bandeira", icon: Flag, color: "bg-success/10 text-success" },
 };
 
-const mockLocations: SupportPoint[] = [
-  { id: "1", name: "Comitê Central São Luís", address: "Av. dos Holandeses, 1000 - Calhau", city: "São Luís", type: "comite", phone: "(98) 3XXX-0001", openHours: "Seg-Sáb 8h-18h" },
-  { id: "2", name: "Comitê Centro Histórico", address: "Rua Portugal, 200 - Centro", city: "São Luís", type: "comite", phone: "(98) 3XXX-0002", openHours: "Seg-Sex 9h-17h" },
-  { id: "3", name: "Ponto de Adesivo - Cohama", address: "Av. Daniel de La Touche, 500", city: "São Luís", type: "adesivo", openHours: "Seg-Sáb 8h-12h" },
-  { id: "4", name: "Comitê Imperatriz", address: "Av. Babaçulândia, 800 - Centro", city: "Imperatriz", type: "comite", phone: "(99) 3XXX-0003", openHours: "Seg-Sáb 8h-18h" },
-  { id: "5", name: "Ponto de Bandeira - Turu", address: "Av. São Luís Rei de França, 1200", city: "São Luís", type: "bandeira", openHours: "Seg-Sex 8h-14h" },
-  { id: "6", name: "Comitê Timon", address: "Rua Coronel Saíba, 150 - Centro", city: "Timon", type: "comite", phone: "(99) 3XXX-0004", openHours: "Seg-Sex 9h-17h" },
-  { id: "7", name: "Ponto de Adesivo - Caxias", address: "Praça Gonçalves Dias, s/n", city: "Caxias", type: "adesivo", openHours: "Seg-Sáb 8h-12h" },
-  { id: "8", name: "Comitê Bacabal", address: "Av. Manoel Inácio, 600", city: "Bacabal", type: "comite", phone: "(99) 3XXX-0005", openHours: "Seg-Sex 9h-17h" },
+const fallbackLocations: SupportPoint[] = [
+  { id: "1", name: "Comitê Central São Luís", address: "Av. dos Holandeses, 1000 - Calhau", city: { id: "1", name: "São Luís" }, type: "comite", phone: "(98) 3XXX-0001", openHours: "Seg-Sáb 8h-18h" },
+  { id: "2", name: "Comitê Centro Histórico", address: "Rua Portugal, 200 - Centro", city: { id: "2", name: "São Luís" }, type: "comite", phone: "(98) 3XXX-0002", openHours: "Seg-Sex 9h-17h" },
+  { id: "3", name: "Ponto de Adesivo - Cohama", address: "Av. Daniel de La Touche, 500", city: { id: "3", name: "São Luís" }, type: "adesivo", openHours: "Seg-Sáb 8h-12h" },
+  { id: "4", name: "Comitê Imperatriz", address: "Av. Babaçulândia, 800 - Centro", city: { id: "4", name: "Imperatriz" }, type: "comite", phone: "(99) 3XXX-0003", openHours: "Seg-Sáb 8h-18h" },
+  { id: "5", name: "Ponto de Bandeira - Turu", address: "Av. São Luís Rei de França, 1200", city: { id: "5", name: "São Luís" }, type: "bandeira", openHours: "Seg-Sex 8h-14h" },
+  { id: "6", name: "Comitê Timon", address: "Rua Coronel Saíba, 150 - Centro", city: { id: "6", name: "Timon" }, type: "comite", phone: "(99) 3XXX-0004", openHours: "Seg-Sex 9h-17h" },
+  { id: "7", name: "Ponto de Adesivo - Caxias", address: "Praça Gonçalves Dias, s/n", city: { id: "7", name: "Caxias" }, type: "adesivo", openHours: "Seg-Sáb 8h-12h" },
+  { id: "8", name: "Comitê Bacabal", address: "Av. Manoel Inácio, 600", city: { id: "8", name: "Bacabal" }, type: "comite", phone: "(99) 3XXX-0005", openHours: "Seg-Sex 9h-17h" },
 ];
 
 interface LocationsListProps {
@@ -37,17 +38,42 @@ interface LocationsListProps {
 }
 
 export function LocationsList({ selectedType, selectedCity, onCityClick }: LocationsListProps) {
-  const filtered = mockLocations.filter((loc) => {
+  const [locations, setLocations] = useState<SupportPoint[]>(fallbackLocations);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/locations")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.locations?.length) {
+          setLocations(data.locations);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = locations.filter((loc) => {
+    const cityName = loc.city?.name || "";
     if (selectedType !== "all" && loc.type !== selectedType) return false;
-    if (selectedCity && loc.city !== selectedCity) return false;
+    if (selectedCity && cityName !== selectedCity) return false;
     return true;
   });
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12 text-muted-foreground">
+        <Loader2 className="w-5 h-5 animate-spin mr-2" /> Carregando pontos de apoio...
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">
       {filtered.map((loc, i) => {
         const config = typeConfig[loc.type] || typeConfig.comite;
         const TypeIcon = config.icon;
+        const cityName = loc.city?.name || "";
         return (
           <motion.div
             key={loc.id}
@@ -55,7 +81,7 @@ export function LocationsList({ selectedType, selectedCity, onCityClick }: Locat
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
             className="bg-white rounded-xl border border-border/50 p-4 hover:shadow-md transition-all cursor-pointer"
-            onClick={() => onCityClick(loc.city)}
+            onClick={() => onCityClick(cityName)}
           >
             <div className="flex items-start gap-3">
               <div className={`w-10 h-10 rounded-lg ${config.color} flex items-center justify-center flex-shrink-0`}>
@@ -68,7 +94,7 @@ export function LocationsList({ selectedType, selectedCity, onCityClick }: Locat
                 <div className="space-y-1 text-xs text-muted-foreground">
                   <p className="flex items-center gap-1.5">
                     <MapPin className="w-3 h-3 text-primary flex-shrink-0" />
-                    {loc.address} - {loc.city}
+                    {loc.address} - {cityName}
                   </p>
                   {loc.phone && (
                     <p className="flex items-center gap-1.5">

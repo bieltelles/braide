@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { LocationsList } from "./LocationsList";
 import { Building2, Tag, Flag, LayoutGrid } from "lucide-react";
@@ -17,13 +17,25 @@ const typeFilters = [
   { value: "bandeira", label: "Bandeiras", icon: Flag },
 ];
 
-const cityOptions = [
-  "", "São Luís", "Imperatriz", "Timon", "Caxias", "Bacabal",
-];
-
 export function LocationsContent() {
   const [selectedType, setSelectedType] = useState("all");
   const [selectedCity, setSelectedCity] = useState("");
+  const [cityOptions, setCityOptions] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetch("/api/locations")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.locations?.length) {
+          const cities = [...new Set(data.locations.map((l: { city?: { name: string } | null }) => l.city?.name).filter(Boolean))] as string[];
+          cities.sort();
+          setCityOptions(cities);
+        }
+      })
+      .catch(() => {
+        setCityOptions(["São Luís", "Imperatriz", "Timon", "Caxias", "Bacabal"]);
+      });
+  }, []);
 
   return (
     <>
@@ -52,7 +64,7 @@ export function LocationsContent() {
           className="px-4 py-2 rounded-lg border border-border/50 bg-white text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
         >
           <option value="">Todas as cidades</option>
-          {cityOptions.filter(Boolean).map((city) => (
+          {cityOptions.map((city) => (
             <option key={city} value={city}>{city}</option>
           ))}
         </select>

@@ -18,6 +18,7 @@ const adminNav = [
   { href: "/admin/sugestoes", label: "Sugestões", icon: MessageSquare },
   { href: "/admin/eventos", label: "Eventos", icon: Calendar },
   { href: "/admin/downloads", label: "Downloads", icon: Download },
+  { href: "/admin/pontos-de-apoio", label: "Pontos de Apoio", icon: MapPin },
 ];
 
 export default function AdminLayout({

@@ -1,17 +1,17 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface SupportPoint {
   id: string;
   name: string;
   address: string;
-  city: string;
+  city: { id: string; name: string } | null;
   latitude: number;
   longitude: number;
   type: string;
-  phone?: string;
-  openHours?: string;
+  phone?: string | null;
+  openHours?: string | null;
 }
 
 const typeColors: Record<string, string> = {
@@ -26,15 +26,15 @@ const typeLabels: Record<string, string> = {
   bandeira: "Ponto de Bandeira",
 };
 
-const mockLocations: SupportPoint[] = [
-  { id: "1", name: "Comitê Central São Luís", address: "Av. dos Holandeses, 1000 - Calhau", city: "São Luís", latitude: -2.4912, longitude: -44.2335, type: "comite", phone: "(98) 3XXX-0001", openHours: "Seg-Sáb 8h-18h" },
-  { id: "2", name: "Comitê Centro Histórico", address: "Rua Portugal, 200 - Centro", city: "São Luís", latitude: -2.5297, longitude: -44.2825, type: "comite", phone: "(98) 3XXX-0002", openHours: "Seg-Sex 9h-17h" },
-  { id: "3", name: "Ponto de Adesivo - Cohama", address: "Av. Daniel de La Touche, 500", city: "São Luís", latitude: -2.5100, longitude: -44.2650, type: "adesivo", openHours: "Seg-Sáb 8h-12h" },
-  { id: "4", name: "Comitê Imperatriz", address: "Av. Babaçulândia, 800 - Centro", city: "Imperatriz", latitude: -5.5189, longitude: -47.4616, type: "comite", phone: "(99) 3XXX-0003", openHours: "Seg-Sáb 8h-18h" },
-  { id: "5", name: "Ponto de Bandeira - Turu", address: "Av. São Luís Rei de França, 1200", city: "São Luís", latitude: -2.5200, longitude: -44.2450, type: "bandeira", openHours: "Seg-Sex 8h-14h" },
-  { id: "6", name: "Comitê Timon", address: "Rua Coronel Saíba, 150 - Centro", city: "Timon", latitude: -5.0941, longitude: -42.8369, type: "comite", phone: "(99) 3XXX-0004", openHours: "Seg-Sex 9h-17h" },
-  { id: "7", name: "Ponto de Adesivo - Caxias", address: "Praça Gonçalves Dias, s/n", city: "Caxias", latitude: -4.8588, longitude: -43.3617, type: "adesivo", openHours: "Seg-Sáb 8h-12h" },
-  { id: "8", name: "Comitê Bacabal", address: "Av. Manoel Inácio, 600", city: "Bacabal", latitude: -4.2247, longitude: -44.7846, type: "comite", phone: "(99) 3XXX-0005", openHours: "Seg-Sex 9h-17h" },
+const fallbackLocations: SupportPoint[] = [
+  { id: "1", name: "Comitê Central São Luís", address: "Av. dos Holandeses, 1000 - Calhau", city: { id: "1", name: "São Luís" }, latitude: -2.4912, longitude: -44.2335, type: "comite", phone: "(98) 3XXX-0001", openHours: "Seg-Sáb 8h-18h" },
+  { id: "2", name: "Comitê Centro Histórico", address: "Rua Portugal, 200 - Centro", city: { id: "2", name: "São Luís" }, latitude: -2.5297, longitude: -44.2825, type: "comite", phone: "(98) 3XXX-0002", openHours: "Seg-Sex 9h-17h" },
+  { id: "3", name: "Ponto de Adesivo - Cohama", address: "Av. Daniel de La Touche, 500", city: { id: "3", name: "São Luís" }, latitude: -2.5100, longitude: -44.2650, type: "adesivo", openHours: "Seg-Sáb 8h-12h" },
+  { id: "4", name: "Comitê Imperatriz", address: "Av. Babaçulândia, 800 - Centro", city: { id: "4", name: "Imperatriz" }, latitude: -5.5189, longitude: -47.4616, type: "comite", phone: "(99) 3XXX-0003", openHours: "Seg-Sáb 8h-18h" },
+  { id: "5", name: "Ponto de Bandeira - Turu", address: "Av. São Luís Rei de França, 1200", city: { id: "5", name: "São Luís" }, latitude: -2.5200, longitude: -44.2450, type: "bandeira", openHours: "Seg-Sex 8h-14h" },
+  { id: "6", name: "Comitê Timon", address: "Rua Coronel Saíba, 150 - Centro", city: { id: "6", name: "Timon" }, latitude: -5.0941, longitude: -42.8369, type: "comite", phone: "(99) 3XXX-0004", openHours: "Seg-Sex 9h-17h" },
+  { id: "7", name: "Ponto de Adesivo - Caxias", address: "Praça Gonçalves Dias, s/n", city: { id: "7", name: "Caxias" }, latitude: -4.8588, longitude: -43.3617, type: "adesivo", openHours: "Seg-Sáb 8h-12h" },
+  { id: "8", name: "Comitê Bacabal", address: "Av. Manoel Inácio, 600", city: { id: "8", name: "Bacabal" }, latitude: -4.2247, longitude: -44.7846, type: "comite", phone: "(99) 3XXX-0005", openHours: "Seg-Sex 9h-17h" },
 ];
 
 interface LocationsMapProps {
@@ -46,9 +46,27 @@ export function LocationsMap({ selectedCity, selectedType }: LocationsMapProps) 
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<L.Map | null>(null);
   const markersRef = useRef<L.CircleMarker[]>([]);
+  const [locations, setLocations] = useState<SupportPoint[]>(fallbackLocations);
 
   useEffect(() => {
-    if (!mapRef.current || leafletMap.current) return;
+    fetch("/api/locations")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.locations?.length) {
+          setLocations(data.locations);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    // Clean up previous map
+    if (leafletMap.current) {
+      leafletMap.current.remove();
+      leafletMap.current = null;
+    }
 
     const initMap = async () => {
       const L = (await import("leaflet")).default;
@@ -66,17 +84,15 @@ export function LocationsMap({ selectedCity, selectedType }: LocationsMapProps) 
       }).addTo(map);
 
       leafletMap.current = map;
-      updateMarkers(L);
-    };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const updateMarkers = (L: any) => {
+      // Add markers
       markersRef.current.forEach((m) => m.remove());
       markersRef.current = [];
 
-      const filtered = mockLocations.filter((loc) => {
+      const filtered = locations.filter((loc) => {
+        const cityName = loc.city?.name || "";
         if (selectedType !== "all" && loc.type !== selectedType) return false;
-        if (selectedCity && loc.city !== selectedCity) return false;
+        if (selectedCity && cityName !== selectedCity) return false;
         return true;
       });
 
@@ -89,12 +105,13 @@ export function LocationsMap({ selectedCity, selectedType }: LocationsMapProps) 
           weight: 2,
           opacity: 1,
           fillOpacity: 0.9,
-        }).addTo(leafletMap.current!);
+        }).addTo(map);
 
+        const cityName = loc.city?.name || "";
         marker.bindPopup(
           `<div style="font-family:system-ui;min-width:180px">
             <strong>${loc.name}</strong><br/>
-            <span style="font-size:12px;color:#64748b">${loc.address}</span><br/>
+            <span style="font-size:12px;color:#64748b">${loc.address} - ${cityName}</span><br/>
             <span style="font-size:11px;color:${color};font-weight:600">${typeLabels[loc.type]}</span>
             ${loc.phone ? `<br/><span style="font-size:12px">📞 ${loc.phone}</span>` : ""}
             ${loc.openHours ? `<br/><span style="font-size:12px">🕐 ${loc.openHours}</span>` : ""}
@@ -103,6 +120,12 @@ export function LocationsMap({ selectedCity, selectedType }: LocationsMapProps) 
 
         markersRef.current.push(marker);
       });
+
+      // Fit bounds if we have markers
+      if (filtered.length > 0) {
+        const bounds = L.latLngBounds(filtered.map((loc) => [loc.latitude, loc.longitude]));
+        map.fitBounds(bounds, { padding: [40, 40], maxZoom: 12 });
+      }
     };
 
     initMap();
@@ -111,7 +134,7 @@ export function LocationsMap({ selectedCity, selectedType }: LocationsMapProps) 
       leafletMap.current?.remove();
       leafletMap.current = null;
     };
-  }, [selectedCity, selectedType]);
+  }, [selectedCity, selectedType, locations]);
 
   return (
     <div className="relative">
