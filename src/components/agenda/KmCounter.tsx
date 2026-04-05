@@ -10,7 +10,7 @@ function AnimatedNumber({ value }: { value: number }) {
   const isInView = useInView(ref, { once: true });
 
   useEffect(() => {
-    if (!isInView) return;
+    if (!isInView || value === 0) { setCount(value); return; }
     const duration = 2000;
     const steps = 60;
     const increment = value / steps;
@@ -32,7 +32,32 @@ function AnimatedNumber({ value }: { value: number }) {
   );
 }
 
+interface AgendaStats {
+  totalKm: number;
+  visitedCitiesCount: number;
+  completedEventsCount: number;
+}
+
 export function KmCounter() {
+  const [stats, setStats] = useState<AgendaStats>({
+    totalKm: 0,
+    visitedCitiesCount: 0,
+    completedEventsCount: 0,
+  });
+
+  useEffect(() => {
+    fetch("/api/agenda-stats")
+      .then((r) => r.json())
+      .then((data) => {
+        setStats({
+          totalKm: data.totalKm || 0,
+          visitedCitiesCount: data.visitedCitiesCount || 0,
+          completedEventsCount: data.completedEventsCount || 0,
+        });
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <div className="grid grid-cols-3 gap-4 mb-8">
       <motion.div
@@ -42,7 +67,7 @@ export function KmCounter() {
       >
         <Navigation className="w-6 h-6 text-primary mx-auto mb-2" />
         <span className="text-2xl sm:text-3xl font-extrabold text-primary block">
-          <AnimatedNumber value={2847} />
+          <AnimatedNumber value={stats.totalKm} />
         </span>
         <span className="text-xs text-muted-foreground">km percorridos</span>
       </motion.div>
@@ -55,7 +80,7 @@ export function KmCounter() {
       >
         <MapPin className="w-6 h-6 text-accent mx-auto mb-2" />
         <span className="text-2xl sm:text-3xl font-extrabold text-accent block">
-          <AnimatedNumber value={42} />
+          <AnimatedNumber value={stats.visitedCitiesCount} />
         </span>
         <span className="text-xs text-muted-foreground">cidades visitadas</span>
       </motion.div>
@@ -68,7 +93,7 @@ export function KmCounter() {
       >
         <CalendarCheck className="w-6 h-6 text-success mx-auto mb-2" />
         <span className="text-2xl sm:text-3xl font-extrabold text-success block">
-          <AnimatedNumber value={8} />
+          <AnimatedNumber value={stats.completedEventsCount} />
         </span>
         <span className="text-xs text-muted-foreground">eventos realizados</span>
       </motion.div>
