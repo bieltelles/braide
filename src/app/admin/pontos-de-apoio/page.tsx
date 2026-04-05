@@ -24,13 +24,17 @@ interface CityOption {
   name: string;
 }
 
-const typeLabels: Record<string, { label: string; icon: React.ElementType; color: string }> = {
-  comite: { label: "Comitê", icon: Building2, color: "bg-primary/10 text-primary" },
-  adesivo: { label: "Ponto de Adesivo", icon: Tag, color: "bg-accent/10 text-accent-dark" },
-  bandeira: { label: "Ponto de Bandeira", icon: Flag, color: "bg-success/10 text-success" },
-};
+const typeOptions = [
+  { value: "comite", label: "Comitê", icon: Building2, color: "bg-primary/10 text-primary" },
+  { value: "adesivo", label: "Ponto de Adesivo", icon: Tag, color: "bg-accent/10 text-accent-dark" },
+  { value: "bandeira", label: "Bandeiras", icon: Flag, color: "bg-success/10 text-success" },
+];
 
-const emptyForm = { name: "", address: "", cityId: "", type: "", phone: "", openHours: "" };
+const typeLabels: Record<string, { label: string; icon: React.ElementType; color: string }> = Object.fromEntries(
+  typeOptions.map((t) => [t.value, { label: t.label, icon: t.icon, color: t.color }])
+);
+
+const emptyForm = { name: "", address: "", cityId: "", types: [] as string[], phone: "", openHours: "" };
 
 export default function AdminPontosDeApoio() {
   const [locations, setLocations] = useState<LocationItem[]>([]);
@@ -81,7 +85,7 @@ export default function AdminPontosDeApoio() {
       name: loc.name,
       address: loc.address,
       cityId: loc.cityId,
-      type: loc.type,
+      types: loc.type ? loc.type.split(",") : [],
       phone: loc.phone || "",
       openHours: loc.openHours || "",
     });
@@ -91,7 +95,7 @@ export default function AdminPontosDeApoio() {
   };
 
   const handleSave = async () => {
-    if (!form.name || !form.address || !form.type || !form.cityId) return;
+    if (!form.name || !form.address || form.types.length === 0 || !form.cityId) return;
     setSaving(true);
     setError("");
 
@@ -100,7 +104,7 @@ export default function AdminPontosDeApoio() {
       address: form.address,
       cityId: form.cityId,
       cityName: selectedCityName,
-      type: form.type,
+      type: form.types.join(","),
       phone: form.phone || undefined,
       openHours: form.openHours || undefined,
     };
@@ -199,16 +203,31 @@ export default function AdminPontosDeApoio() {
             </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">Tipo</label>
-              <select
-                value={form.type}
-                onChange={(e) => setForm({ ...form, type: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-border/50 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-              >
-                <option value="">Selecione o tipo...</option>
-                {Object.entries(typeLabels).map(([v, { label }]) => (
-                  <option key={v} value={v}>{label}</option>
-                ))}
-              </select>
+              <div className="flex flex-col gap-2 px-3 py-2 rounded-lg border border-border/50">
+                {typeOptions.map((opt) => {
+                  const TypeIcon = opt.icon;
+                  return (
+                    <label key={opt.value} className="flex items-center gap-2 cursor-pointer text-sm">
+                      <input
+                        type="checkbox"
+                        checked={form.types.includes(opt.value)}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setForm({
+                            ...form,
+                            types: checked
+                              ? [...form.types, opt.value]
+                              : form.types.filter((t) => t !== opt.value),
+                          });
+                        }}
+                        className="rounded border-border/50 accent-primary"
+                      />
+                      <TypeIcon className="w-4 h-4" />
+                      {opt.label}
+                    </label>
+                  );
+                })}
+              </div>
             </div>
             <div className="relative">
               <label className="block text-sm font-medium text-foreground mb-1">
@@ -295,7 +314,7 @@ export default function AdminPontosDeApoio() {
 
           <div className="flex justify-end gap-2 mt-4">
             <Button variant="ghost" size="sm" onClick={resetForm}>Cancelar</Button>
-            <Button size="sm" onClick={handleSave} disabled={saving || !form.name || !form.address || !form.type || !form.cityId}>
+            <Button size="sm" onClick={handleSave} disabled={saving || !form.name || !form.address || form.types.length === 0 || !form.cityId}>
               {saving && <Loader2 className="w-3 h-3 animate-spin mr-1" />}
               {editingId ? "Atualizar Ponto" : "Salvar Ponto"}
             </Button>
@@ -305,8 +324,9 @@ export default function AdminPontosDeApoio() {
 
       <div className="space-y-3">
         {locations.map((loc, i) => {
-          const typeInfo = typeLabels[loc.type] || typeLabels.comite;
-          const TypeIcon = typeInfo.icon;
+          const types = loc.type ? loc.type.split(",") : [];
+          const firstType = typeLabels[types[0]] || typeLabels.comite;
+          const FirstIcon = firstType.icon;
           return (
             <motion.div
               key={loc.id}
@@ -317,14 +337,19 @@ export default function AdminPontosDeApoio() {
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-3 flex-1">
-                  <div className={`w-10 h-10 rounded-lg ${typeInfo.color} flex items-center justify-center flex-shrink-0`}>
-                    <TypeIcon className="w-5 h-5" />
+                  <div className={`w-10 h-10 rounded-lg ${firstType.color} flex items-center justify-center flex-shrink-0`}>
+                    <FirstIcon className="w-5 h-5" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={`px-2 py-0.5 rounded text-xs font-semibold ${typeInfo.color}`}>
-                        {typeInfo.label}
-                      </span>
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      {types.map((t) => {
+                        const info = typeLabels[t];
+                        return info ? (
+                          <span key={t} className={`px-2 py-0.5 rounded text-xs font-semibold ${info.color}`}>
+                            {info.label}
+                          </span>
+                        ) : null;
+                      })}
                       {!loc.isActive && (
                         <span className="px-2 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-700">Inativo</span>
                       )}

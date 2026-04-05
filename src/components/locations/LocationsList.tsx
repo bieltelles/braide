@@ -55,7 +55,10 @@ export function LocationsList({ selectedType, selectedCity, onCityClick }: Locat
 
   const filtered = locations.filter((loc) => {
     const cityName = loc.city?.name || "";
-    if (selectedType !== "all" && loc.type !== selectedType) return false;
+    if (selectedType !== "all") {
+      const types = loc.type ? loc.type.split(",") : [];
+      if (!types.includes(selectedType)) return false;
+    }
     if (selectedCity && cityName !== selectedCity) return false;
     return true;
   });
@@ -71,8 +74,9 @@ export function LocationsList({ selectedType, selectedCity, onCityClick }: Locat
   return (
     <div className="space-y-3">
       {filtered.map((loc, i) => {
-        const config = typeConfig[loc.type] || typeConfig.comite;
-        const TypeIcon = config.icon;
+        const types = loc.type ? loc.type.split(",") : [];
+        const firstConfig = typeConfig[types[0]] || typeConfig.comite;
+        const FirstIcon = firstConfig.icon;
         const cityName = loc.city?.name || "";
         return (
           <motion.div
@@ -84,12 +88,20 @@ export function LocationsList({ selectedType, selectedCity, onCityClick }: Locat
             onClick={() => onCityClick(cityName)}
           >
             <div className="flex items-start gap-3">
-              <div className={`w-10 h-10 rounded-lg ${config.color} flex items-center justify-center flex-shrink-0`}>
-                <TypeIcon className="w-5 h-5" />
+              <div className={`w-10 h-10 rounded-lg ${firstConfig.color} flex items-center justify-center flex-shrink-0`}>
+                <FirstIcon className="w-5 h-5" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <h3 className="font-bold text-sm text-foreground truncate">{loc.name}</h3>
+                  {types.map((t) => {
+                    const cfg = typeConfig[t];
+                    return cfg ? (
+                      <span key={t} className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${cfg.color}`}>
+                        {cfg.label}
+                      </span>
+                    ) : null;
+                  })}
                 </div>
                 <div className="space-y-1 text-xs text-muted-foreground">
                   <p className="flex items-center gap-1.5">

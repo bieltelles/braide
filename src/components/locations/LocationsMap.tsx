@@ -91,13 +91,17 @@ export function LocationsMap({ selectedCity, selectedType }: LocationsMapProps) 
 
       const filtered = locations.filter((loc) => {
         const cityName = loc.city?.name || "";
-        if (selectedType !== "all" && loc.type !== selectedType) return false;
+        if (selectedType !== "all") {
+          const types = loc.type ? loc.type.split(",") : [];
+          if (!types.includes(selectedType)) return false;
+        }
         if (selectedCity && cityName !== selectedCity) return false;
         return true;
       });
 
       filtered.forEach((loc) => {
-        const color = typeColors[loc.type] || "#1e40af";
+        const types = loc.type ? loc.type.split(",") : [];
+        const color = typeColors[types[0]] || "#1e40af";
         const marker = L.circleMarker([loc.latitude, loc.longitude], {
           radius: 9,
           fillColor: color,
@@ -108,11 +112,12 @@ export function LocationsMap({ selectedCity, selectedType }: LocationsMapProps) 
         }).addTo(map);
 
         const cityName = loc.city?.name || "";
+        const typeText = types.map((t) => typeLabels[t] || t).join(" / ");
         marker.bindPopup(
           `<div style="font-family:system-ui;min-width:180px">
             <strong>${loc.name}</strong><br/>
             <span style="font-size:12px;color:#64748b">${loc.address} - ${cityName}</span><br/>
-            <span style="font-size:11px;color:${color};font-weight:600">${typeLabels[loc.type]}</span>
+            <span style="font-size:11px;color:${color};font-weight:600">${typeText}</span>
             ${loc.phone ? `<br/><span style="font-size:12px">📞 ${loc.phone}</span>` : ""}
             ${loc.openHours ? `<br/><span style="font-size:12px">🕐 ${loc.openHours}</span>` : ""}
           </div>`
