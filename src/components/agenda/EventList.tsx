@@ -40,7 +40,8 @@ const fallbackEvents: EventItem[] = [
 ];
 
 function formatDate(dateStr: string) {
-  const date = new Date(dateStr + "T12:00:00");
+  const normalized = dateStr.includes("T") ? dateStr : dateStr + "T12:00:00";
+  const date = new Date(normalized);
   return date.toLocaleDateString("pt-BR", {
     day: "2-digit",
     month: "short",
