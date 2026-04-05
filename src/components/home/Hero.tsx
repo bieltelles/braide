@@ -68,7 +68,7 @@ export function Hero() {
             <Link href="#apoie">
               <Button size="xl" variant="accent" className="group">
                 <Users className="w-5 h-5" />
-                Eu Apoio Braide
+                #SouBraide
                 <ChevronDown className="w-4 h-4 group-hover:translate-y-1 transition-transform" />
               </Button>
             </Link>

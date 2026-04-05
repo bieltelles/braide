@@ -53,7 +53,7 @@ export function Navbar() {
               className="inline-flex items-center gap-2 bg-accent text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-accent/25 hover:bg-accent-dark hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5"
             >
               <Users className="w-4 h-4" />
-              Eu Apoio Braide
+              #SouBraide
             </Link>
           </div>
 
@@ -92,7 +92,7 @@ export function Navbar() {
               className="flex items-center justify-center gap-2 mt-2 bg-accent text-white px-5 py-3 rounded-xl text-sm font-semibold shadow-lg"
             >
               <Users className="w-4 h-4" />
-              Eu Apoio Braide
+              #SouBraide
             </Link>
           </div>
         </div>

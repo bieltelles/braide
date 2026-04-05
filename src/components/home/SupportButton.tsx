@@ -2,24 +2,52 @@
 
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
-import { Heart, LogIn, Check, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { Heart, LogIn, Check, Loader2, MapPin } from "lucide-react";
+import { useState, useEffect } from "react";
+
+interface CityOption {
+  id: string;
+  name: string;
+}
 
 interface SupportButtonProps {
   isAuthenticated: boolean;
   isSupporter: boolean;
-  onSupport: () => Promise<void>;
+  userName: string | null;
+  userImage: string | null;
+  onSupport: (city?: string) => Promise<void>;
   onSignIn: (provider: string) => void;
 }
 
 export function SupportButton({
   isAuthenticated,
   isSupporter,
+  userName,
+  userImage,
   onSupport,
   onSignIn,
 }: SupportButtonProps) {
   const [loading, setLoading] = useState(false);
   const [showProviders, setShowProviders] = useState(false);
+  const [showCityPicker, setShowCityPicker] = useState(false);
+  const [citySearch, setCitySearch] = useState("");
+  const [selectedCity, setSelectedCity] = useState("");
+  const [cities, setCities] = useState<CityOption[]>([]);
+
+  useEffect(() => {
+    // If authenticated but not yet supporter, show city picker
+    if (isAuthenticated && !isSupporter) {
+      setShowCityPicker(true);
+      fetch("/api/cities")
+        .then((r) => r.json())
+        .then((data) => { if (data.cities?.length) setCities(data.cities); })
+        .catch(() => {});
+    }
+  }, [isAuthenticated, isSupporter]);
+
+  const filteredCities = citySearch
+    ? cities.filter((c) => c.name.toLowerCase().includes(citySearch.toLowerCase())).slice(0, 10)
+    : [];
 
   const handleSupport = async () => {
     if (!isAuthenticated) {
@@ -28,7 +56,7 @@ export function SupportButton({
     }
     setLoading(true);
     try {
-      await onSupport();
+      await onSupport(selectedCity || undefined);
     } finally {
       setLoading(false);
     }
@@ -36,16 +64,30 @@ export function SupportButton({
 
   if (isSupporter) {
     return (
-      <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="text-center"
-      >
-        <div className="inline-flex items-center gap-2 bg-success/10 text-success px-6 py-3 rounded-2xl border border-success/20">
-          <Check className="w-5 h-5" />
-          <span className="font-semibold">Você já declarou seu apoio!</span>
+      <section id="apoie" className="py-20 bg-gradient-to-br from-primary/5 via-white to-accent/5">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+          >
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full overflow-hidden border-4 border-success/30 shadow-lg">
+              {userImage ? (
+                <img src={userImage} alt={userName || ""} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-success to-success-light flex items-center justify-center text-white text-2xl font-bold">
+                  <Check className="w-8 h-8" />
+                </div>
+              )}
+            </div>
+            <div className="inline-flex items-center gap-2 bg-success/10 text-success px-6 py-3 rounded-2xl border border-success/20">
+              <Check className="w-5 h-5" />
+              <span className="font-semibold">
+                {userName ? `${userName}, você` : "Você"} já declarou apoio! #SouBraide
+              </span>
+            </div>
+          </motion.div>
         </div>
-      </motion.div>
+      </section>
     );
   }
 
@@ -62,14 +104,80 @@ export function SupportButton({
           </div>
 
           <h2 className="text-3xl sm:text-4xl font-extrabold text-foreground mb-4">
-            Declare seu <span className="text-accent">apoio</span>
+            <span className="text-accent">#SouBraide</span>
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto mb-8 text-lg">
-            Faça parte desse movimento. Sua foto aparecerá no mural de apoiadores e seus amigos
-            poderão ver que você apoia Eduardo Braide.
+            Declare seu apoio a Eduardo Braide. Sua foto aparecerá no mapa de apoiadores
+            e seus amigos poderão ver que você faz parte desse movimento.
           </p>
 
-          {!showProviders ? (
+          {showCityPicker && isAuthenticated ? (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="max-w-md mx-auto mb-6"
+            >
+              <div className="bg-white rounded-2xl shadow-lg border border-border/50 p-6">
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  {userImage && (
+                    <img src={userImage} alt="" className="w-10 h-10 rounded-full border-2 border-primary/30" />
+                  )}
+                  <span className="font-bold text-foreground">{userName || "Apoiador"}</span>
+                </div>
+                <p className="text-sm text-muted-foreground mb-4">
+                  De qual cidade do Maranhão você é?
+                </p>
+
+                <div className="relative mb-4">
+                  <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-border/50 focus-within:ring-2 focus-within:ring-primary/30">
+                    <MapPin className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                    <input
+                      type="text"
+                      value={citySearch}
+                      onChange={(e) => { setCitySearch(e.target.value); setSelectedCity(""); }}
+                      placeholder="Digite sua cidade..."
+                      className="w-full text-sm focus:outline-none bg-transparent"
+                    />
+                  </div>
+                  {citySearch && !selectedCity && filteredCities.length > 0 && (
+                    <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border border-border/50 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                      {filteredCities.map((city) => (
+                        <button
+                          key={city.id}
+                          onClick={() => { setSelectedCity(city.name); setCitySearch(city.name); }}
+                          className="w-full text-left px-4 py-2.5 text-sm hover:bg-primary/5 hover:text-primary transition-colors cursor-pointer"
+                        >
+                          {city.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <Button
+                  size="lg"
+                  variant="accent"
+                  onClick={handleSupport}
+                  disabled={loading}
+                  className="w-full text-base"
+                >
+                  {loading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Heart className="w-5 h-5" />
+                  )}
+                  Confirmar apoio
+                </Button>
+
+                <button
+                  onClick={handleSupport}
+                  className="mt-2 text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                >
+                  Pular e declarar sem informar cidade
+                </button>
+              </div>
+            </motion.div>
+          ) : !showProviders ? (
             <Button
               size="xl"
               variant="accent"
@@ -82,44 +190,46 @@ export function SupportButton({
               ) : (
                 <Heart className="w-5 h-5" />
               )}
-              Eu Apoio Braide
+              #SouBraide
             </Button>
           ) : (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex flex-col sm:flex-row items-center justify-center gap-3"
+              className="flex flex-col items-center gap-4"
             >
-              <p className="text-sm text-muted-foreground mb-2 sm:mb-0 w-full sm:w-auto">
+              <p className="text-sm text-muted-foreground">
                 <LogIn className="w-4 h-4 inline mr-1" />
-                Entre com:
+                Entre para declarar seu apoio:
               </p>
-              <Button
-                onClick={() => onSignIn("google")}
-                className="bg-white border border-border text-foreground hover:bg-muted shadow-sm w-full sm:w-auto"
-              >
-                <svg className="w-5 h-5" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                </svg>
-                Google
-              </Button>
-              <Button
-                onClick={() => onSignIn("facebook")}
-                className="bg-[#1877F2] text-white hover:bg-[#166FE5] shadow-sm w-full sm:w-auto"
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                </svg>
-                Facebook
-              </Button>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <Button
+                  onClick={() => onSignIn("google")}
+                  className="bg-white border border-border text-foreground hover:bg-muted shadow-sm w-full sm:w-auto"
+                >
+                  <svg className="w-5 h-5" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                  </svg>
+                  Entrar com Google
+                </Button>
+                <Button
+                  onClick={() => onSignIn("facebook")}
+                  className="bg-[#1877F2] text-white hover:bg-[#166FE5] shadow-sm w-full sm:w-auto"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                  </svg>
+                  Entrar com Facebook
+                </Button>
+              </div>
             </motion.div>
           )}
 
           <p className="mt-6 text-xs text-muted-foreground">
-            Ao clicar, você concorda em ter sua foto exibida no mural de apoiadores.
+            Ao clicar, você concorda em ter sua foto exibida no mapa de apoiadores.
           </p>
         </motion.div>
       </div>
