@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "motion/react";
-import { Calendar, MapPin, Plus, Clock, Check, X, Loader2, Trash2 } from "lucide-react";
+import { Calendar, MapPin, Plus, Clock, Check, X, Loader2, Trash2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface EventItem {
@@ -44,6 +44,7 @@ export default function AdminEventos() {
   const [cities, setCities] = useState<CityOption[]>([]);
   const [citiesLoading, setCitiesLoading] = useState(true);
   const [citySearch, setCitySearch] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ title: "", type: "", cityId: "", date: "", location: "", description: "" });
 
   const fetchEvents = useCallback(() => {
@@ -80,7 +81,30 @@ export default function AdminEventos() {
     });
   };
 
-  const handleCreate = async () => {
+  const resetForm = () => {
+    setForm({ title: "", type: "", cityId: "", date: "", location: "", description: "" });
+    setCitySearch("");
+    setEditingId(null);
+    setShowForm(false);
+    setError("");
+  };
+
+  const startEdit = (event: EventItem) => {
+    const dateStr = event.date.includes("T") ? event.date.split("T")[0] : event.date;
+    setForm({
+      title: event.title,
+      type: event.type,
+      cityId: event.cityId,
+      date: dateStr,
+      location: event.location || "",
+      description: event.description || "",
+    });
+    setCitySearch(event.city?.name || "");
+    setEditingId(event.id);
+    setShowForm(true);
+  };
+
+  const handleSave = async () => {
     if (!form.title || !form.type || !form.date || !form.cityId) return;
     setSaving(true);
     setError("");
@@ -89,30 +113,35 @@ export default function AdminEventos() {
       title: form.title,
       type: form.type,
       cityId: form.cityId,
-      cityName: selectedCityName, // send name so API can upsert if needed
+      cityName: selectedCityName,
       date: form.date,
       location: form.location || undefined,
       description: form.description || undefined,
     };
 
     try {
-      let res = await fetch("/api/events", {
-        method: "POST",
+      const isEdit = !!editingId;
+      const url = isEdit ? `/api/events/${editingId}` : "/api/events";
+      const method = isEdit ? "PATCH" : "POST";
+
+      let res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
 
-      if (!res.ok && res.status === 500) {
+      if (!res.ok && res.status === 500 && !isEdit) {
         res = await setupAndRetry(body);
       }
 
       if (res.ok) {
         const data = await res.json();
-        setEvents((prev) => [data.event, ...prev]);
-        setForm({ title: "", type: "", cityId: "", date: "", location: "", description: "" });
-        setCitySearch("");
-        setShowForm(false);
-        setError("");
+        if (isEdit) {
+          setEvents((prev) => prev.map((e) => (e.id === editingId ? data.event : e)));
+        } else {
+          setEvents((prev) => [data.event, ...prev]);
+        }
+        resetForm();
       } else {
         const err = await res.json().catch(() => ({}));
         setError(err.error || `Erro ao salvar (${res.status})`);
@@ -150,7 +179,7 @@ export default function AdminEventos() {
         </div>
         <div className="flex items-center gap-2">
           {loading && <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />}
-          <Button onClick={() => setShowForm(!showForm)} size="sm">
+          <Button onClick={() => { if (showForm) { resetForm(); } else { setShowForm(true); } }} size="sm">
             <Plus className="w-4 h-4" />
             Novo Evento
           </Button>
@@ -163,7 +192,7 @@ export default function AdminEventos() {
           animate={{ opacity: 1, y: 0 }}
           className="bg-white rounded-xl border border-border/50 p-6 mb-6"
         >
-          <h3 className="font-bold text-foreground mb-4">Novo Evento</h3>
+          <h3 className="font-bold text-foreground mb-4">{editingId ? "Editar Evento" : "Novo Evento"}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">Título</label>
@@ -261,10 +290,10 @@ export default function AdminEventos() {
           )}
 
           <div className="flex justify-end gap-2 mt-4">
-            <Button variant="ghost" size="sm" onClick={() => { setShowForm(false); setError(""); }}>Cancelar</Button>
-            <Button size="sm" onClick={handleCreate} disabled={saving || !form.title || !form.type || !form.date || !form.cityId}>
+            <Button variant="ghost" size="sm" onClick={resetForm}>Cancelar</Button>
+            <Button size="sm" onClick={handleSave} disabled={saving || !form.title || !form.type || !form.date || !form.cityId}>
               {saving && <Loader2 className="w-3 h-3 animate-spin mr-1" />}
-              Salvar Evento
+              {editingId ? "Atualizar Evento" : "Salvar Evento"}
             </Button>
           </div>
         </motion.div>
@@ -302,7 +331,7 @@ export default function AdminEventos() {
                     <MapPin className="w-3 h-3" /> {event.city?.name || "—"}
                   </span>
                   <span className="flex items-center gap-1">
-                    <Calendar className="w-3 h-3" /> {new Date(event.date).toLocaleDateString("pt-BR")}
+                    <Calendar className="w-3 h-3" /> {new Date(event.date.includes("T") ? event.date : event.date + "T12:00:00").toLocaleDateString("pt-BR")}
                   </span>
                   {event.location && (
                     <span className="flex items-center gap-1">
@@ -311,19 +340,29 @@ export default function AdminEventos() {
                   )}
                 </div>
               </div>
-              {event.status === "scheduled" && (
-                <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1">
+                <button onClick={() => startEdit(event)} className="p-1.5 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer" title="Editar evento">
+                  <Pencil className="w-4 h-4 text-blue-500" />
+                </button>
+                {event.status !== "completed" && (
                   <button onClick={() => handleStatusChange(event.id, "completed")} className="p-1.5 rounded-lg hover:bg-green-50 transition-colors cursor-pointer" title="Marcar como realizado">
                     <Check className="w-4 h-4 text-success" />
                   </button>
+                )}
+                {event.status === "completed" && (
+                  <button onClick={() => handleStatusChange(event.id, "scheduled")} className="p-1.5 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer" title="Reabrir como agendado">
+                    <Clock className="w-4 h-4 text-blue-500" />
+                  </button>
+                )}
+                {event.status !== "cancelled" && (
                   <button onClick={() => handleStatusChange(event.id, "cancelled")} className="p-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer" title="Cancelar evento">
                     <X className="w-4 h-4 text-red-500" />
                   </button>
-                  <button onClick={() => handleDelete(event.id)} className="p-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer" title="Excluir evento">
-                    <Trash2 className="w-4 h-4 text-red-500" />
-                  </button>
-                </div>
-              )}
+                )}
+                <button onClick={() => handleDelete(event.id)} className="p-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer" title="Excluir evento">
+                  <Trash2 className="w-4 h-4 text-red-500" />
+                </button>
+              </div>
             </div>
           </motion.div>
         ))}
