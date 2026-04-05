@@ -2,6 +2,7 @@
 
 import { motion } from "motion/react";
 import { Users, Heart, MapPin } from "lucide-react";
+import { SmartSupportLink } from "@/components/shared/SmartSupportLink";
 import dynamic from "next/dynamic";
 
 const SupportersMap = dynamic(
@@ -34,7 +35,7 @@ interface SocialProofProps {
 
 export function SocialProof({ supporters, totalCount, cities, userLat, userLng }: SocialProofProps) {
   return (
-    <section className="py-20">
+    <section id="mapa-apoiadores" className="py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -135,13 +136,12 @@ export function SocialProof({ supporters, totalCount, cities, userLat, userLng }
             Declare seu apoio com <span className="font-semibold text-accent">#SouBraide</span> e sua foto
             aparecerá no mapa junto a apoiadores da sua região.
           </p>
-          <a
-            href="#apoie"
-            className="inline-flex items-center gap-2 bg-accent text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-accent/25 hover:bg-accent-dark transition-all"
+          <SmartSupportLink
+            className="inline-flex items-center gap-2 bg-accent text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-accent/25 hover:bg-accent-dark transition-all cursor-pointer"
           >
             <Heart className="w-4 h-4" />
             #SouBraide
-          </a>
+          </SmartSupportLink>
         </motion.div>
       </div>
     </section>

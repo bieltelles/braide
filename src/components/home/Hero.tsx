@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, Users, Play } from "lucide-react";
 import Link from "next/link";
+import { SmartSupportLink } from "@/components/shared/SmartSupportLink";
 
 export function Hero() {
   return (
@@ -65,13 +66,11 @@ export function Hero() {
             transition={{ delay: 0.6, duration: 0.5 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
-            <Link href="#apoie">
-              <Button size="xl" variant="accent" className="group">
-                <Users className="w-5 h-5" />
-                #SouBraide
-                <ChevronDown className="w-4 h-4 group-hover:translate-y-1 transition-transform" />
-              </Button>
-            </Link>
+            <SmartSupportLink as="button" className="inline-flex items-center gap-2 bg-accent text-white px-8 py-4 rounded-2xl text-lg font-semibold shadow-lg shadow-accent/25 hover:bg-accent-dark hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 cursor-pointer group">
+              <Users className="w-5 h-5" />
+              #SouBraide
+              <ChevronDown className="w-4 h-4 group-hover:translate-y-1 transition-transform" />
+            </SmartSupportLink>
             <Link href="/trajetoria">
               <Button
                 size="xl"

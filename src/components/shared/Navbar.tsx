@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Menu, X, MapPin, FileText, Download, Users, Calendar, ChevronRight } from "lucide-react";
+import { SmartSupportLink } from "./SmartSupportLink";
 
 const navLinks = [
   { href: "/trajetoria", label: "Trajetória", icon: ChevronRight },
@@ -48,13 +49,12 @@ export function Navbar() {
 
           {/* CTA Desktop */}
           <div className="hidden lg:flex items-center gap-3">
-            <Link
-              href="/#apoie"
-              className="inline-flex items-center gap-2 bg-accent text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-accent/25 hover:bg-accent-dark hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5"
+            <SmartSupportLink
+              className="inline-flex items-center gap-2 bg-accent text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-accent/25 hover:bg-accent-dark hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
             >
               <Users className="w-4 h-4" />
               #SouBraide
-            </Link>
+            </SmartSupportLink>
           </div>
 
           {/* Mobile Menu Button */}
@@ -86,14 +86,12 @@ export function Navbar() {
                 {link.label}
               </Link>
             ))}
-            <Link
-              href="/#apoie"
-              onClick={() => setIsOpen(false)}
-              className="flex items-center justify-center gap-2 mt-2 bg-accent text-white px-5 py-3 rounded-xl text-sm font-semibold shadow-lg"
+            <SmartSupportLink
+              className="flex items-center justify-center gap-2 mt-2 bg-accent text-white px-5 py-3 rounded-xl text-sm font-semibold shadow-lg cursor-pointer"
             >
               <Users className="w-4 h-4" />
               #SouBraide
-            </Link>
+            </SmartSupportLink>
           </div>
         </div>
       </nav>
