@@ -3,6 +3,32 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { maranhaoCities } from "@/data/maranhao-cities";
 
+/** Haversine distance in km */
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/** Find nearest Maranhão city from coordinates */
+function findNearestCityServer(lat: number, lng: number): string | null {
+  let nearest: { name: string; distance: number } | null = null;
+  for (const city of maranhaoCities) {
+    const d = haversineKm(lat, lng, city.latitude, city.longitude);
+    if (!nearest || d < nearest.distance) {
+      nearest = { name: city.name, distance: d };
+    }
+  }
+  if (nearest && nearest.distance <= 150) return nearest.name;
+  return null;
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const limit = parseInt(searchParams.get("limit") || "200");
@@ -67,7 +93,14 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json().catch(() => ({}));
-    const city = body.city || null;
+    let city = body.city || null;
+    const latitude = body.latitude;
+    const longitude = body.longitude;
+
+    // If coordinates provided but no city, resolve server-side
+    if (!city && latitude && longitude) {
+      city = findNearestCityServer(latitude, longitude);
+    }
 
     const user = await prisma.user.update({
       where: { id: session.user.id },
@@ -78,7 +111,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({ success: true, user });
+    return NextResponse.json({ success: true, user: { city: user.city } });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Erro desconhecido";
     return NextResponse.json({ error: msg }, { status: 500 });

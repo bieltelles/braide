@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useGeolocation } from "@/hooks/useGeolocation";
 import { SocialProof } from "./SocialProof";
 
 interface Supporter {
@@ -44,26 +45,17 @@ export function SocialProofSection() {
   const [totalCount, setTotalCount] = useState(1247);
   const [cities, setCities] = useState<CityGroup[]>([]);
   const [loaded, setLoaded] = useState(false);
-  const [userLat, setUserLat] = useState(0);
-  const [userLng, setUserLng] = useState(0);
+  const geo = useGeolocation();
 
   useEffect(() => {
-    // Get user location for proximity sorting
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setUserLat(pos.coords.latitude);
-          setUserLng(pos.coords.longitude);
-        },
-        () => {} // silently fail
-      );
-    }
-  }, []);
+    // Wait for geo to resolve (or fail) before fetching so we can send coords
+    if (geo.loading) return;
 
-  useEffect(() => {
     const params = new URLSearchParams();
-    if (userLat) params.set("lat", String(userLat));
-    if (userLng) params.set("lng", String(userLng));
+    if (geo.coords) {
+      params.set("lat", String(geo.coords.latitude));
+      params.set("lng", String(geo.coords.longitude));
+    }
 
     fetch(`/api/supporters?${params}`)
       .then((r) => r.json())
@@ -74,7 +66,7 @@ export function SocialProofSection() {
       })
       .catch(() => {})
       .finally(() => setLoaded(true));
-  }, [userLat, userLng]);
+  }, [geo.loading, geo.coords]);
 
   if (!loaded) return null;
 
@@ -83,8 +75,8 @@ export function SocialProofSection() {
       supporters={supporters}
       totalCount={totalCount}
       cities={cities}
-      userLat={userLat}
-      userLng={userLng}
+      userLat={geo.coords?.latitude || 0}
+      userLng={geo.coords?.longitude || 0}
     />
   );
 }
