@@ -85,12 +85,13 @@ const timeline: TimelineEvent[] = [
       "Como prefeito, promove ampla transformação na infraestrutura da cidade: reforma de escolas, construção de creches de tempo integral, entrega de unidades de saúde e obras viárias em bairros da periferia.",
     highlight: true,
     details: [
+      { text: "Programa 'Trânsito Livre': maior intervenção de mobilidade urbana da história de São Luís, com obras em rotatórias, avenidas e corredores viários" },
+      { text: "42+ obras de drenagem profunda em áreas críticas, combatendo alagamentos históricos em bairros como Cidade Olímpica, Coroadinho e Vila Embratel" },
+      { text: "Mais de 250 obras executadas simultaneamente em toda a cidade" },
       { text: "Mais de 170 escolas municipais reformadas e entregues com nova infraestrutura" },
-      { text: "7 creches de tempo integral construídas, com mais em andamento" },
       { text: "Centros de saúde reestruturados em diversos bairros" },
-      { text: "Programa 'Escola Nova' com reforma total e novos recursos pedagógicos" },
-      { text: "Obras de pavimentação, drenagem e intervenções viárias em toda a cidade" },
-      { text: "Reajuste salarial acumulado de +36% aos servidores municipais: 8,2% (2023) + 8% (2024) + 6% (2025) + 10% (2026) — o maior da história de São Luís" },
+      { text: "Reajuste salarial acumulado de +36% aos servidores municipais: 8,2% (2023) + 8% (2024) + 6% (2025) + 10% (2026)" },
+      { text: "R$ 1,6 bilhão investido com recursos próprios — sem empréstimos e sem aumento de impostos" },
     ],
   },
   {

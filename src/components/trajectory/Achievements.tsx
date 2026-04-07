@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import { GraduationCap, Heart, Landmark, ShieldCheck, Users, Award } from "lucide-react";
+import { GraduationCap, Landmark, ShieldCheck, Users, Award, Car, PiggyBank } from "lucide-react";
 
 interface Achievement {
   icon: React.ElementType;
@@ -12,7 +12,7 @@ interface Achievement {
 
 const achievements: Achievement[] = [
   { icon: GraduationCap, value: "170+", label: "Escolas reformadas e entregues", color: "from-success to-success-light" },
-  { icon: Heart, value: "7+", label: "Creches de tempo integral construídas", color: "from-red-500 to-red-400" },
+  { icon: Car, value: "250+", label: "Obras simultâneas: Trânsito Livre e drenagem profunda", color: "from-red-500 to-red-400" },
   { icon: Landmark, value: "+36%", label: "Reajuste acumulado aos servidores (2023–2026)", color: "from-accent to-amber-400" },
   { icon: Award, value: "82%", label: "Aprovação como prefeito (AtlasIntel, dez/2025)", color: "from-primary to-primary-light" },
   { icon: Users, value: "403.981", label: "Votos na reeleição (70,12%) em 1° turno", color: "from-purple-500 to-purple-400" },
@@ -56,6 +56,30 @@ export function Achievements() {
           </motion.div>
         ))}
       </div>
+
+      {/* Destaque: Recursos Próprios */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ delay: 0.3 }}
+        className="mt-10 bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 border border-primary/15 rounded-2xl p-6 sm:p-8 text-center"
+      >
+        <div className="flex items-center justify-center gap-3 mb-3">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-success to-success-light flex items-center justify-center shadow-lg">
+            <PiggyBank className="w-6 h-6 text-white" />
+          </div>
+          <h3 className="text-xl sm:text-2xl font-extrabold text-foreground">
+            R$ 1,6 bilhão em investimentos
+          </h3>
+        </div>
+        <p className="text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+          Todas as obras e investimentos realizados durante a gestão foram feitos com{" "}
+          <span className="font-bold text-primary">recursos próprios da Prefeitura</span>,{" "}
+          <span className="font-bold text-foreground">sem empréstimos e sem aumento de impostos</span>{" "}
+          — um exemplo de responsabilidade fiscal e gestão eficiente do dinheiro público.
+        </p>
+      </motion.div>
     </section>
   );
 }
