@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import { Building2, GraduationCap, Heart, Landmark, Road, ShieldCheck } from "lucide-react";
+import { GraduationCap, Heart, Landmark, ShieldCheck, Users, Award } from "lucide-react";
 
 interface Achievement {
   icon: React.ElementType;
@@ -11,12 +11,12 @@ interface Achievement {
 }
 
 const achievements: Achievement[] = [
-  { icon: Road, value: "1.500+", label: "Ruas pavimentadas em São Luís", color: "from-primary to-primary-light" },
-  { icon: GraduationCap, value: "50+", label: "Creches e escolas construídas/reformadas", color: "from-success to-success-light" },
-  { icon: Heart, value: "30+", label: "UBS reformadas e equipadas", color: "from-red-500 to-red-400" },
-  { icon: Landmark, value: "R$ 2B+", label: "Em investimentos na cidade", color: "from-accent to-amber-400" },
-  { icon: Building2, value: "100%", label: "Centro Histórico revitalizado", color: "from-purple-500 to-purple-400" },
-  { icon: ShieldCheck, value: "70%", label: "Aprovação popular na reeleição", color: "from-primary to-accent" },
+  { icon: GraduationCap, value: "170+", label: "Escolas reformadas e entregues", color: "from-success to-success-light" },
+  { icon: Heart, value: "7+", label: "Creches de tempo integral construídas", color: "from-red-500 to-red-400" },
+  { icon: Landmark, value: "328", label: "Matérias legislativas apresentadas na ALEMA", color: "from-accent to-amber-400" },
+  { icon: Award, value: "82%", label: "Aprovação como prefeito (AtlasIntel, dez/2025)", color: "from-primary to-primary-light" },
+  { icon: Users, value: "403.981", label: "Votos na reeleição (70,12%) em 1° turno", color: "from-purple-500 to-purple-400" },
+  { icon: ShieldCheck, value: "20+", label: "Anos de vida pública dedicados ao Maranhão", color: "from-primary to-accent" },
 ];
 
 export function Achievements() {
@@ -29,10 +29,10 @@ export function Achievements() {
         className="text-center mb-12"
       >
         <h2 className="text-3xl sm:text-4xl font-extrabold text-foreground mb-3">
-          Conquistas como <span className="text-primary">Prefeito</span>
+          Números que <span className="text-primary">falam por si</span>
         </h2>
         <p className="text-muted-foreground max-w-xl mx-auto">
-          Resultados concretos que transformaram São Luís e que agora serão levados a todo o Maranhão.
+          Resultados concretos de uma trajetória dedicada ao Maranhão.
         </p>
       </motion.div>
 

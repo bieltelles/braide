@@ -6,7 +6,7 @@ import { ShareButton } from "@/components/shared/ShareButton";
 export const metadata: Metadata = {
   title: "Trajetória Política",
   description:
-    "Conheça a trajetória política de Eduardo Braide: de vereador a prefeito mais votado da história de São Luís.",
+    "Conheça a trajetória política de Eduardo Braide: do legislativo à prefeitura mais aprovada do Brasil.",
 };
 
 export default function TrajetoriaPage() {
@@ -23,7 +23,7 @@ export default function TrajetoriaPage() {
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
             Uma carreira dedicada ao Maranhão, com resultados comprovados que falam por si.
-            De vereador ao prefeito mais votado da história de São Luís.
+            Do legislativo à prefeitura mais aprovada entre todas as capitais do Brasil.
           </p>
           <ShareButton text="Conheça a trajetória política de Eduardo Braide!" />
         </div>
