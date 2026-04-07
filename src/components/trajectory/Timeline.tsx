@@ -90,6 +90,7 @@ const timeline: TimelineEvent[] = [
       { text: "Centros de saúde reestruturados em diversos bairros" },
       { text: "Programa 'Escola Nova' com reforma total e novos recursos pedagógicos" },
       { text: "Obras de pavimentação, drenagem e intervenções viárias em toda a cidade" },
+      { text: "Reajuste salarial acumulado de +36% aos servidores municipais: 8,2% (2023) + 8% (2024) + 6% (2025) + 10% (2026) — o maior da história de São Luís" },
     ],
   },
   {

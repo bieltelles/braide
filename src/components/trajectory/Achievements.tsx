@@ -13,7 +13,7 @@ interface Achievement {
 const achievements: Achievement[] = [
   { icon: GraduationCap, value: "170+", label: "Escolas reformadas e entregues", color: "from-success to-success-light" },
   { icon: Heart, value: "7+", label: "Creches de tempo integral construídas", color: "from-red-500 to-red-400" },
-  { icon: Landmark, value: "328", label: "Matérias legislativas apresentadas na ALEMA", color: "from-accent to-amber-400" },
+  { icon: Landmark, value: "+36%", label: "Reajuste acumulado aos servidores (2023–2026)", color: "from-accent to-amber-400" },
   { icon: Award, value: "82%", label: "Aprovação como prefeito (AtlasIntel, dez/2025)", color: "from-primary to-primary-light" },
   { icon: Users, value: "403.981", label: "Votos na reeleição (70,12%) em 1° turno", color: "from-purple-500 to-purple-400" },
   { icon: ShieldCheck, value: "20+", label: "Anos de vida pública dedicados ao Maranhão", color: "from-primary to-accent" },
