@@ -100,6 +100,18 @@ export async function GET() {
       }
     }
 
+    // Find the most recent event (by date) regardless of status — that's where Braide is
+    const allEvents = [...completedEvents, ...scheduledEvents].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+    // Most recent past event first, then next scheduled
+    const now = new Date();
+    const pastEvents = allEvents.filter((e) => new Date(e.date) <= now);
+    const lastEvent = pastEvents[0] || allEvents[allEvents.length - 1];
+    const lastEventCity = lastEvent?.city
+      ? { name: lastEvent.city.name, latitude: lastEvent.city.latitude, longitude: lastEvent.city.longitude }
+      : null;
+
     return NextResponse.json({
       totalKm,
       visitedCitiesCount: visitedCityNames.size,
@@ -108,6 +120,7 @@ export async function GET() {
       visitedCities: uniqueVisitedCities,
       upcomingCities,
       route,
+      lastEventCity,
     });
   } catch {
     // Fallback when DB is unavailable
@@ -119,6 +132,7 @@ export async function GET() {
       visitedCities: [],
       upcomingCities: [],
       route: [],
+      lastEventCity: null,
     });
   }
 }

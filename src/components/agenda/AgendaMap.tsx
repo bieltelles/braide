@@ -12,6 +12,7 @@ interface MapData {
   visitedCities: CityCoord[];
   upcomingCities: CityCoord[];
   route: CityCoord[];
+  lastEventCity: CityCoord | null;
 }
 
 interface AgendaMapProps {
@@ -32,10 +33,11 @@ export function AgendaMap({ selectedCity }: AgendaMapProps) {
           visitedCities: data.visitedCities || [],
           upcomingCities: data.upcomingCities || [],
           route: data.route || [],
+          lastEventCity: data.lastEventCity || null,
         });
       })
       .catch(() => {
-        setMapData({ visitedCities: [], upcomingCities: [], route: [] });
+        setMapData({ visitedCities: [], upcomingCities: [], route: [], lastEventCity: null });
       });
   }, []);
 
@@ -134,6 +136,37 @@ export function AgendaMap({ selectedCity }: AgendaMapProps) {
         }).addTo(map);
       }
 
+      // "Braide está aqui" marker on the last visited city
+      if (mapData.lastEventCity) {
+        const lec = mapData.lastEventCity;
+        const braideIcon = L.divIcon({
+          className: "",
+          iconSize: [52, 64],
+          iconAnchor: [26, 64],
+          popupAnchor: [0, -66],
+          html: `
+            <div style="position:relative;width:52px;height:64px;display:flex;flex-direction:column;align-items:center">
+              <div style="width:46px;height:46px;border-radius:50%;border:3px solid #1e40af;overflow:hidden;background:#1e3a5f;box-shadow:0 2px 8px rgba(0,0,0,0.3)">
+                <img src="/images/braide-profile.jpg" alt="Eduardo Braide" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+                <div style="display:none;width:100%;height:100%;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:18px;font-family:system-ui">EB</div>
+              </div>
+              <div style="width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:12px solid #1e40af;margin-top:-2px"></div>
+              <div style="position:absolute;top:-8px;right:-4px;background:#22c55e;color:white;font-size:8px;font-weight:700;padding:1px 5px;border-radius:8px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,0.2);border:1.5px solid white">AQUI</div>
+            </div>
+          `,
+        });
+
+        L.marker([lec.latitude, lec.longitude], { icon: braideIcon, zIndexOffset: 1000 })
+          .addTo(map)
+          .bindPopup(
+            `<div style="text-align:center;font-family:system-ui">
+              <strong style="color:#1e40af">Eduardo Braide</strong><br/>
+              <span style="font-size:12px">📍 ${lec.name}</span><br/>
+              <span style="color:#22c55e;font-size:11px;font-weight:600">Última visita</span>
+            </div>`
+          );
+      }
+
       // Fit bounds if there are markers
       const allCities = [...mapData.visitedCities, ...mapData.upcomingCities];
       if (allCities.length > 0) {
@@ -182,7 +215,11 @@ export function AgendaMap({ selectedCity }: AgendaMapProps) {
       />
       {/* Legend */}
       <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-xl px-4 py-3 shadow-lg border border-border/50 z-[1000]">
-        <div className="flex items-center gap-4 text-xs">
+        <div className="flex items-center gap-4 text-xs flex-wrap">
+          <span className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded-full bg-primary ring-2 ring-green-500" />
+            Braide aqui
+          </span>
           <span className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-full bg-amber-500" />
             Partida
