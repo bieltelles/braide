@@ -22,7 +22,7 @@ export default function PlanoPage() {
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Um plano participativo, construído com os maranhenses.
-            Conheça as propostas por área e envie suas sugestões.
+            Conheça os eixos estratégicos e envie suas sugestões.
           </p>
         </div>
 
