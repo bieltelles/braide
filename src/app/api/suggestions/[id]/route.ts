@@ -12,18 +12,25 @@ export async function PATCH(
 
   const { id } = await params;
   const body = await request.json();
-  const { status } = body;
+  const { status, content } = body;
 
-  if (!["approved", "rejected", "pending"].includes(status)) {
-    return NextResponse.json({ error: "Status invalido" }, { status: 400 });
+  const data: Record<string, unknown> = {};
+
+  if (status) {
+    if (!["approved", "rejected", "pending"].includes(status)) {
+      return NextResponse.json({ error: "Status invalido" }, { status: 400 });
+    }
+    data.status = status;
+    data.moderatedAt = new Date();
+  }
+
+  if (content !== undefined) {
+    data.content = content.trim();
   }
 
   const suggestion = await prisma.suggestion.update({
     where: { id },
-    data: {
-      status,
-      moderatedAt: new Date(),
-    },
+    data,
     include: {
       user: { select: { name: true, image: true, city: true } },
     },
