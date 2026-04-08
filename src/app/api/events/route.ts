@@ -91,19 +91,38 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const event = await prisma.event.create({
-      data: {
-        title,
-        description: description || null,
-        cityId: realCityId,
-        date: new Date(date + "T12:00:00"),
-        endDate: endDate ? new Date(endDate + "T12:00:00") : null,
-        location: location || null,
-        time: time || null,
-        type,
-      },
-      include: { city: true },
-    });
+    const eventData: Record<string, unknown> = {
+      title,
+      description: description || null,
+      cityId: realCityId,
+      date: new Date(date + "T12:00:00"),
+      endDate: endDate ? new Date(endDate + "T12:00:00") : null,
+      location: location || null,
+      type,
+    };
+
+    // Only include time if provided (column may not exist yet in DB)
+    if (time) eventData.time = time;
+
+    let event;
+    try {
+      event = await prisma.event.create({
+        data: eventData as never,
+        include: { city: true },
+      });
+    } catch (createErr: unknown) {
+      // If the time column doesn't exist yet, retry without it
+      const msg = createErr instanceof Error ? createErr.message : "";
+      if (msg.includes("time") && msg.includes("does not exist")) {
+        delete eventData.time;
+        event = await prisma.event.create({
+          data: eventData as never,
+          include: { city: true },
+        });
+      } else {
+        throw createErr;
+      }
+    }
 
     return NextResponse.json({ event }, { status: 201 });
   } catch (e: unknown) {
