@@ -11,15 +11,16 @@ interface EventItem {
   date: string;
   endDate?: string;
   location?: string;
+  time?: string;
   type: string;
   status: string;
 }
 
 const typeLabels: Record<string, { label: string; color: string }> = {
   visita: { label: "Visita", color: "bg-primary/10 text-primary" },
-  comicio: { label: "Comício", color: "bg-accent/10 text-accent-dark" },
-  reuniao: { label: "Reunião", color: "bg-purple-100 text-purple-700" },
-  caravana: { label: "Caravana", color: "bg-success/10 text-success" },
+  carreata: { label: "Carreata", color: "bg-accent/10 text-accent-dark" },
+  caminhada: { label: "Caminhada", color: "bg-success/10 text-success" },
+  reuniao_liderancas: { label: "Reunião com Lideranças", color: "bg-purple-100 text-purple-700" },
 };
 
 const statusLabels: Record<string, { label: string; color: string }> = {
@@ -29,14 +30,14 @@ const statusLabels: Record<string, { label: string; color: string }> = {
 };
 
 const fallbackEvents: EventItem[] = [
-  { id: "1", title: "Caravana da Transformação - Região Tocantina", city: { id: "1", name: "Imperatriz" }, date: "2026-04-15", location: "Praça Brasil, Centro", type: "caravana", status: "scheduled" },
-  { id: "2", title: "Reunião com lideranças locais", city: { id: "2", name: "Balsas" }, date: "2026-04-12", location: "Centro de Convenções", type: "reuniao", status: "scheduled" },
+  { id: "1", title: "Carreata da Transformação - Região Tocantina", city: { id: "1", name: "Imperatriz" }, date: "2026-04-15", time: "09:00", location: "Praça Brasil, Centro", type: "carreata", status: "scheduled" },
+  { id: "2", title: "Reunião com lideranças locais", city: { id: "2", name: "Balsas" }, date: "2026-04-12", time: "14:00", location: "Centro de Convenções", type: "reuniao_liderancas", status: "scheduled" },
   { id: "3", title: "Visita a obras e comunidades", city: { id: "3", name: "Timon" }, date: "2026-04-08", location: "Diversos pontos da cidade", type: "visita", status: "scheduled" },
-  { id: "4", title: "Caravana pelo Baixo Parnaíba", city: { id: "4", name: "Chapadinha" }, date: "2026-03-28", location: "Praça Central", type: "caravana", status: "completed" },
-  { id: "5", title: "Reunião com prefeitos da região", city: { id: "5", name: "Bacabal" }, date: "2026-03-22", location: "Câmara Municipal", type: "reuniao", status: "completed" },
+  { id: "4", title: "Caminhada pelo Baixo Parnaíba", city: { id: "4", name: "Chapadinha" }, date: "2026-03-28", time: "07:00", location: "Praça Central", type: "caminhada", status: "completed" },
+  { id: "5", title: "Reunião com lideranças da região", city: { id: "5", name: "Bacabal" }, date: "2026-03-22", location: "Câmara Municipal", type: "reuniao_liderancas", status: "completed" },
   { id: "6", title: "Visita a comunidades ribeirinhas", city: { id: "6", name: "Pinheiro" }, date: "2026-03-18", location: "Porto de Pinheiro", type: "visita", status: "completed" },
-  { id: "7", title: "Comício da Esperança", city: { id: "7", name: "Caxias" }, date: "2026-03-10", location: "Praça Gonçalves Dias", type: "comicio", status: "completed" },
-  { id: "8", title: "Caravana do Maranhão Novo", city: { id: "8", name: "Santa Inês" }, date: "2026-03-05", location: "Ginásio Municipal", type: "caravana", status: "completed" },
+  { id: "7", title: "Carreata pelo centro histórico", city: { id: "7", name: "Caxias" }, date: "2026-03-10", time: "16:00", location: "Praça Gonçalves Dias", type: "carreata", status: "completed" },
+  { id: "8", title: "Caminhada do Maranhão Novo", city: { id: "8", name: "Santa Inês" }, date: "2026-03-05", time: "07:30", location: "Ginásio Municipal", type: "caminhada", status: "completed" },
 ];
 
 function formatDate(dateStr: string) {
@@ -116,9 +117,15 @@ export function EventList({ filter, onCityClick }: EventListProps) {
                 <Calendar className="w-3.5 h-3.5 text-primary" />
                 {formatDate(event.date)}
               </span>
-              {event.location && (
+              {event.time && (
                 <span className="flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-primary" />
+                  {event.time}
+                </span>
+              )}
+              {event.location && (
+                <span className="flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-muted-foreground/60" />
                   {event.location}
                 </span>
               )}

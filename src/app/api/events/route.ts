@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { title, description, cityId, cityName, date, endDate, location, type } = body;
+  const { title, description, cityId, cityName, date, endDate, location, time, type } = body;
 
   if (!title || !date || !type) {
     return NextResponse.json({ error: "Campos obrigatórios: title, date, type" }, { status: 400 });
@@ -99,6 +99,7 @@ export async function POST(request: NextRequest) {
         date: new Date(date + "T12:00:00"),
         endDate: endDate ? new Date(endDate + "T12:00:00") : null,
         location: location || null,
+        time: time || null,
         type,
       },
       include: { city: true },

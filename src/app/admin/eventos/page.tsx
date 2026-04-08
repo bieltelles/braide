@@ -25,14 +25,14 @@ interface CityOption {
 
 const typeLabels: Record<string, string> = {
   visita: "Visita",
-  comicio: "Comício",
-  reuniao: "Reunião",
-  caravana: "Caravana",
+  carreata: "Carreata",
+  caminhada: "Caminhada",
+  reuniao_liderancas: "Reunião com Lideranças",
 };
 
 const fallbackEvents: EventItem[] = [
-  { id: "1", title: "Caravana da Transformação - Tocantina", description: null, cityId: "1", city: { id: "1", name: "Imperatriz" }, date: "2026-04-15", endDate: null, location: "Praça Brasil, Centro", type: "caravana", status: "scheduled" },
-  { id: "2", title: "Reunião com lideranças", description: null, cityId: "2", city: { id: "2", name: "Balsas" }, date: "2026-04-12", endDate: null, location: "Centro de Convenções", type: "reuniao", status: "scheduled" },
+  { id: "1", title: "Carreata da Transformação - Tocantina", description: null, cityId: "1", city: { id: "1", name: "Imperatriz" }, date: "2026-04-15", endDate: null, location: "Praça Brasil, Centro", type: "carreata", status: "scheduled" },
+  { id: "2", title: "Reunião com lideranças", description: null, cityId: "2", city: { id: "2", name: "Balsas" }, date: "2026-04-12", endDate: null, location: "Centro de Convenções", type: "reuniao_liderancas", status: "scheduled" },
 ];
 
 export default function AdminEventos() {
@@ -45,7 +45,7 @@ export default function AdminEventos() {
   const [citiesLoading, setCitiesLoading] = useState(true);
   const [citySearch, setCitySearch] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ title: "", type: "", cityId: "", date: "", location: "", description: "" });
+  const [form, setForm] = useState({ title: "", type: "", cityId: "", date: "", time: "", location: "", description: "" });
 
   const fetchEvents = useCallback(() => {
     fetch("/api/events")
@@ -82,7 +82,7 @@ export default function AdminEventos() {
   };
 
   const resetForm = () => {
-    setForm({ title: "", type: "", cityId: "", date: "", location: "", description: "" });
+    setForm({ title: "", type: "", cityId: "", date: "", time: "", location: "", description: "" });
     setCitySearch("");
     setEditingId(null);
     setShowForm(false);
@@ -96,6 +96,8 @@ export default function AdminEventos() {
       type: event.type,
       cityId: event.cityId,
       date: dateStr,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      time: (event as any).time || "",
       location: event.location || "",
       description: event.description || "",
     });
@@ -115,6 +117,7 @@ export default function AdminEventos() {
       cityId: form.cityId,
       cityName: selectedCityName,
       date: form.date,
+      time: form.time || undefined,
       location: form.location || undefined,
       description: form.description || undefined,
     };
@@ -271,6 +274,17 @@ export default function AdminEventos() {
                 className="w-full px-3 py-2 rounded-lg border border-border/50 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1">
+                Horário <span className="text-muted-foreground font-normal">(opcional)</span>
+              </label>
+              <input
+                type="time"
+                value={form.time}
+                onChange={(e) => setForm({ ...form, time: e.target.value })}
+                className="w-full px-3 py-2 rounded-lg border border-border/50 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </div>
             <div className="sm:col-span-2">
               <label className="block text-sm font-medium text-foreground mb-1">Local (endereço)</label>
               <input
@@ -333,9 +347,15 @@ export default function AdminEventos() {
                   <span className="flex items-center gap-1">
                     <Calendar className="w-3 h-3" /> {new Date(event.date.includes("T") ? event.date : event.date + "T12:00:00").toLocaleDateString("pt-BR")}
                   </span>
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                  {(event as any).time && (
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" /> {(event as any).time}
+                    </span>
+                  )}
                   {event.location && (
                     <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" /> {event.location}
+                      <MapPin className="w-3 h-3" /> {event.location}
                     </span>
                   )}
                 </div>

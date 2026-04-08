@@ -85,7 +85,8 @@ model Event {
   date        DateTime
   endDate     DateTime?
   location    String?
-  type        String    // visita, comicio, reuniao, caravana
+  time        String?   // optional HH:MM
+  type        String    // visita, carreata, caminhada, reuniao_liderancas
   status      String    @default("scheduled") // scheduled, completed, cancelled
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
