@@ -13,9 +13,14 @@ export async function PATCH(
 
   const { id } = await params;
   const body = await request.json();
-  const { cityId, cityName, date, endDate, ...rest } = body;
+  const { cityId, cityName, date, endDate, time, ...rest } = body;
 
   const data: Record<string, unknown> = { ...rest };
+
+  // Explicitly handle time — allow clearing it by sending null
+  if (time !== undefined) {
+    data.time = time || null;
+  }
 
   // Handle date fields with timezone-safe parsing
   if (date) {

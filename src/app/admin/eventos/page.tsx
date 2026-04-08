@@ -117,7 +117,7 @@ export default function AdminEventos() {
       cityId: form.cityId,
       cityName: selectedCityName,
       date: form.date,
-      time: form.time || undefined,
+      time: form.time || null,
       location: form.location || undefined,
       description: form.description || undefined,
     };
