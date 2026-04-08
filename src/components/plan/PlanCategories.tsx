@@ -1,13 +1,11 @@
 "use client";
 
 import { motion } from "motion/react";
-import { useState } from "react";
 import {
   Heart,
   TrendingUp,
   TreePine,
   Landmark,
-  ChevronDown,
   Target,
   Users,
 } from "lucide-react";
@@ -68,8 +66,6 @@ const categories: PlanCategory[] = [
 ];
 
 export function PlanCategories() {
-  const [expanded, setExpanded] = useState<string | null>("gestao");
-
   return (
     <div className="space-y-8">
       {/* Participação banner */}
@@ -88,10 +84,9 @@ export function PlanCategories() {
         </p>
       </motion.div>
 
-      {/* Eixos */}
+      {/* Eixos — sempre visíveis */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {categories.map((cat, i) => {
-          const isExpanded = expanded === cat.id;
           const hasGoals = cat.goals.length > 0;
 
           return (
@@ -102,69 +97,48 @@ export function PlanCategories() {
               viewport={{ once: true }}
               transition={{ delay: i * 0.08 }}
             >
-              <div
-                className={`bg-white rounded-2xl border transition-all duration-300 overflow-hidden ${
-                  isExpanded
-                    ? "border-primary/30 shadow-lg"
-                    : "border-border/50 hover:shadow-md"
-                }`}
-              >
+              <div className="bg-white rounded-2xl border border-primary/20 shadow-sm h-full flex flex-col">
                 {/* Header */}
-                <button
-                  onClick={() => setExpanded(isExpanded ? null : cat.id)}
-                  className="w-full flex items-center gap-4 p-5 text-left cursor-pointer"
-                >
+                <div className="flex items-center gap-4 p-5">
                   <div
                     className={`w-12 h-12 rounded-xl bg-gradient-to-br ${cat.color} flex items-center justify-center shadow-lg flex-shrink-0`}
                   >
                     <cat.icon className="w-6 h-6 text-white" />
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div>
                     <h3 className="font-bold text-foreground">{cat.title}</h3>
-                    <p className="text-sm text-muted-foreground line-clamp-1">{cat.description}</p>
                   </div>
-                  <ChevronDown
-                    className={`w-5 h-5 text-muted-foreground transition-transform flex-shrink-0 ${
-                      isExpanded ? "rotate-180" : ""
-                    }`}
-                  />
-                </button>
+                </div>
 
                 {/* Content */}
-                <div
-                  className={`transition-all duration-300 overflow-hidden ${
-                    isExpanded ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
-                  }`}
-                >
-                  <div className="px-5 pb-5 border-t border-border/50 pt-4">
-                    <p className="text-sm text-muted-foreground mb-4">{cat.description}</p>
+                <div className="px-5 pb-5 border-t border-border/50 pt-4 flex flex-col flex-1">
+                  <p className="text-sm text-muted-foreground mb-4">{cat.description}</p>
 
-                    {hasGoals && (
-                      <>
-                        <h4 className="flex items-center gap-2 text-sm font-bold text-foreground mb-3">
-                          <Target className="w-4 h-4 text-primary" />
-                          Metas
-                        </h4>
-                        <ul className="space-y-2 mb-4">
-                          {cat.goals.map((goal, j) => (
-                            <li key={j} className="flex items-start gap-2 text-sm text-foreground">
-                              <span className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
-                                {j + 1}
-                              </span>
-                              <span className="font-medium">{goal.text}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </>
-                    )}
+                  {hasGoals && (
+                    <>
+                      <h4 className="flex items-center gap-2 text-sm font-bold text-foreground mb-3">
+                        <Target className="w-4 h-4 text-primary" />
+                        Metas
+                      </h4>
+                      <ul className="space-y-2 mb-4">
+                        {cat.goals.map((goal, j) => (
+                          <li key={j} className="flex items-start gap-2 text-sm text-foreground">
+                            <span className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
+                              {j + 1}
+                            </span>
+                            <span className="font-medium">{goal.text}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
 
-                    {/* Em elaboração */}
-                    <div className="flex items-center gap-2 bg-accent/5 border border-accent/15 rounded-xl px-4 py-3">
-                      <Users className="w-4 h-4 text-accent flex-shrink-0" />
-                      <p className="text-sm text-accent-dark font-medium">
-                        {hasGoals ? "Demais metas em" : "Em"} elaboração junto com o povo do Maranhão
-                      </p>
-                    </div>
+                  {/* Em elaboração */}
+                  <div className="flex items-center gap-2 bg-accent/5 border border-accent/15 rounded-xl px-4 py-3 mt-auto">
+                    <Users className="w-4 h-4 text-accent flex-shrink-0" />
+                    <p className="text-sm text-accent-dark font-medium">
+                      {hasGoals ? "Demais metas em" : "Em"} elaboração junto com o povo do Maranhão
+                    </p>
                   </div>
                 </div>
               </div>
