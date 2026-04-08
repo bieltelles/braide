@@ -10,12 +10,18 @@ interface Suggestion {
   content: string;
   status: string;
   createdAt: string;
-  user: { name: string | null; image: string | null; city: string | null };
+  authorName: string | null;
+  authorCity: string | null;
+  user: { name: string | null; image: string | null; city: string | null } | null;
 }
 
 const categoryLabels: Record<string, string> = {
-  saude: "Saude", educacao: "Educacao", seguranca: "Seguranca",
-  infraestrutura: "Infraestrutura", economia: "Economia", meio_ambiente: "Meio Ambiente",
+  social: "Gente em Primeiro Lugar", economia: "Oportunidades",
+  infraestrutura: "Território Sustentável", gestao: "Gestão Eficiente",
+  outro: "Outro",
+  // legacy
+  saude: "Saúde", educacao: "Educação", seguranca: "Segurança",
+  meio_ambiente: "Meio Ambiente",
 };
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
@@ -25,12 +31,10 @@ const statusConfig: Record<string, { label: string; color: string; icon: React.E
 };
 
 const fallbackSuggestions: Suggestion[] = [
-  { id: "1", category: "saude", content: "Construir um hospital regional na baixada maranhense.", status: "pending", createdAt: "2026-04-02T00:00:00Z", user: { name: "Maria Silva", image: null, city: "Sao Luis" } },
-  { id: "2", category: "educacao", content: "Criar programa de bolsas para alunos do ensino medio.", status: "pending", createdAt: "2026-04-01T00:00:00Z", user: { name: "Joao Santos", image: null, city: "Imperatriz" } },
-  { id: "3", category: "infraestrutura", content: "Pavimentar a estrada entre Timon e Caxias.", status: "approved", createdAt: "2026-03-30T00:00:00Z", user: { name: "Ana Costa", image: null, city: "Timon" } },
-  { id: "4", category: "seguranca", content: "Instalar cameras de seguranca no centro de Caxias.", status: "approved", createdAt: "2026-03-28T00:00:00Z", user: { name: "Pedro Oliveira", image: null, city: "Caxias" } },
-  { id: "5", category: "economia", content: "Criar feiras de empreendedorismo mensais no interior.", status: "pending", createdAt: "2026-03-27T00:00:00Z", user: { name: "Lucia Ferreira", image: null, city: "Bacabal" } },
-  { id: "6", category: "meio_ambiente", content: "Criar programa de reflorestamento no cerrado de Balsas.", status: "rejected", createdAt: "2026-03-25T00:00:00Z", user: { name: "Carlos Souza", image: null, city: "Balsas" } },
+  { id: "1", category: "social", content: "Construir um hospital regional na baixada maranhense.", status: "pending", createdAt: "2026-04-02T00:00:00Z", authorName: "Maria Silva", authorCity: "São Luís", user: null },
+  { id: "2", category: "social", content: "Criar programa de bolsas para alunos do ensino medio.", status: "pending", createdAt: "2026-04-01T00:00:00Z", authorName: "João Santos", authorCity: "Imperatriz", user: null },
+  { id: "3", category: "infraestrutura", content: "Pavimentar a estrada entre Timon e Caxias.", status: "approved", createdAt: "2026-03-30T00:00:00Z", authorName: "Ana Costa", authorCity: "Timon", user: null },
+  { id: "4", category: "gestao", content: "Reduzir os impostos estaduais para micro e pequenas empresas.", status: "pending", createdAt: "2026-03-28T00:00:00Z", authorName: "Pedro Oliveira", authorCity: "Caxias", user: null },
 ];
 
 export default function AdminSugestoes() {
@@ -131,7 +135,10 @@ export default function AdminSugestoes() {
               <p className="text-sm text-foreground mb-3">{suggestion.content}</p>
               <div className="flex items-center justify-between">
                 <div className="text-xs text-muted-foreground">
-                  <span className="font-medium">{suggestion.user.name}</span> - {suggestion.user.city}
+                  <span className="font-medium">{suggestion.authorName || suggestion.user?.name || "Anônimo"}</span>
+                  {(suggestion.authorCity || suggestion.user?.city) && (
+                    <> — {suggestion.authorCity || suggestion.user?.city}</>
+                  )}
                 </div>
                 {suggestion.status === "pending" && (
                   <div className="flex items-center gap-2">

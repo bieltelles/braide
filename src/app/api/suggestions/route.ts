@@ -6,24 +6,28 @@ export async function GET(request: NextRequest) {
   const category = searchParams.get("category");
   const status = searchParams.get("status");
 
-  const suggestions = await prisma.suggestion.findMany({
-    where: {
-      ...(category && category !== "all" ? { category } : {}),
-      ...(status && status !== "all" ? { status } : {}),
-    },
-    include: {
-      user: { select: { name: true, image: true, city: true } },
-    },
-    orderBy: { createdAt: "desc" },
-    take: 100,
-  });
+  try {
+    const suggestions = await prisma.suggestion.findMany({
+      where: {
+        ...(category && category !== "all" ? { category } : {}),
+        ...(status && status !== "all" ? { status } : {}),
+      },
+      include: {
+        user: { select: { name: true, image: true, city: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+    });
 
-  const counts = await prisma.suggestion.groupBy({
-    by: ["status"],
-    _count: true,
-  });
+    const counts = await prisma.suggestion.groupBy({
+      by: ["status"],
+      _count: true,
+    });
 
-  return NextResponse.json({ suggestions, counts });
+    return NextResponse.json({ suggestions, counts });
+  } catch {
+    return NextResponse.json({ suggestions: [], counts: [] });
+  }
 }
 
 export async function POST(request: NextRequest) {
