@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Mail, Phone } from "lucide-react";
+import { BraideAvatar } from "./BraideAvatar";
 
 function InstagramIcon({ className }: { className?: string }) {
   return (
@@ -47,9 +48,7 @@ export function Footer() {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center font-bold text-lg">
-                EB
-              </div>
+              <BraideAvatar />
               <div>
                 <p className="font-bold leading-none">Eduardo Braide</p>
                 <p className="text-xs text-white/60">Pré-candidato a Governador</p>

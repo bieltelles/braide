@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X, MessageCircle, Send } from "lucide-react";
+import { BraideAvatar } from "./BraideAvatar";
 
 const WHATSAPP_NUMBER = "5598999999999";
 const DEFAULT_MESSAGE = "Olá! Quero saber mais sobre a pré-candidatura de Eduardo Braide ao Governo do Maranhão.";
@@ -30,9 +31,7 @@ export function WhatsAppButton() {
             {/* Header */}
             <div className="bg-[#075E54] px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white text-xs font-bold">
-                  EB
-                </div>
+                <BraideAvatar size="sm" rounded="full" />
                 <div>
                   <p className="text-white text-sm font-semibold">Eduardo Braide</p>
                   <p className="text-white/70 text-xs">Responde em minutos</p>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Menu, X, MapPin, FileText, Download, Users, Calendar, ChevronRight } from "lucide-react";
 import { SmartSupportLink } from "./SmartSupportLink";
+import { BraideAvatar } from "./BraideAvatar";
 
 const navLinks = [
   { href: "/trajetoria", label: "Trajetória", icon: ChevronRight },
@@ -24,9 +25,7 @@ export function Navbar() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
             <div className="flex items-center gap-1">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-primary/20">
-                EB
-              </div>
+              <BraideAvatar className="shadow-lg shadow-primary/20" />
               <div className="ml-2 hidden sm:block">
                 <p className="text-sm font-bold text-primary leading-none">Eduardo Braide</p>
                 <p className="text-xs text-muted-foreground">Governador do Maranhão</p>
