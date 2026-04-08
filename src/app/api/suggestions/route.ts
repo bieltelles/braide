@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { category, content, name } = body;
+  const { category, content, name, city } = body;
 
   if (!category || !content?.trim()) {
     return NextResponse.json({ error: "Campos obrigatorios: category, content" }, { status: 400 });
@@ -38,13 +38,26 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Conteudo muito longo (max 1000 caracteres)" }, { status: 400 });
   }
 
-  const suggestion = await prisma.suggestion.create({
-    data: {
-      category,
-      content: content.trim(),
-      authorName: name || "Anônimo",
-    },
-  });
+  const data: Record<string, unknown> = {
+    category,
+    content: content.trim(),
+    authorName: name || "Anônimo",
+  };
+  if (city) data.authorCity = city;
+
+  let suggestion;
+  try {
+    suggestion = await prisma.suggestion.create({ data: data as never });
+  } catch (err: unknown) {
+    // If authorCity column doesn't exist yet, retry without it
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.includes("authorCity") && msg.includes("does not exist")) {
+      delete data.authorCity;
+      suggestion = await prisma.suggestion.create({ data: data as never });
+    } else {
+      throw err;
+    }
+  }
 
   return NextResponse.json({ suggestion }, { status: 201 });
 }

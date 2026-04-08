@@ -99,7 +99,8 @@ model Suggestion {
   userId      String?
   user        User?     @relation(fields: [userId], references: [id])
   authorName  String?
-  category    String    // saude, educacao, infraestrutura, seguranca, economia, meio_ambiente
+  authorCity  String?
+  category    String    // social, economia, infraestrutura, gestao, outro
   content     String
   status      String    @default("pending") // pending, approved, rejected
   moderatedBy String?
