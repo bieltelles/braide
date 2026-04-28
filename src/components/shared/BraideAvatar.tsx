@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 interface BraideAvatarProps {
-  size?: "sm" | "md";
+  size?: "sm" | "md" | "xl";
   rounded?: "xl" | "full";
   className?: string;
 }
@@ -11,7 +11,7 @@ interface BraideAvatarProps {
 export function BraideAvatar({ size = "md", rounded = "xl", className = "" }: BraideAvatarProps) {
   const [failed, setFailed] = useState(false);
 
-  const sizeClasses = size === "sm" ? "w-8 h-8 text-xs" : "w-10 h-10 text-lg";
+  const sizeClasses = size === "sm" ? "w-8 h-8 text-xs" : size === "xl" ? "w-28 h-28 text-3xl" : "w-10 h-10 text-lg";
   const roundedClass = rounded === "full" ? "rounded-full" : "rounded-xl";
 
   if (failed) {
